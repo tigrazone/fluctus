@@ -934,6 +934,16 @@ void Tracer::handleFileDrop(int count, const char **filenames)
     std::cout << "Unknown file format" << std::endl;
 }
 
+#define cam_pos params.camera.pos
+#define cam_center (params.camera.pos + params.camera.dir)
+void Tracer::printDebug()
+{
+    printf("\r\nCamera Position: %f, %f, %f\r\n", cam_pos.x, cam_pos.y, cam_pos.z);
+    printf("Camera Look At: %f, %f, %f\r\n", cam_center.x, cam_center.y, cam_center.z);
+}
+#undef cam_center
+#undef cam_pos
+
 // Functional keys that need to be triggered only once per press
 #define matchInit(key, expr) case key: expr; paramsUpdatePending = true; break;
 #define matchKeep(key, expr) case key: expr; break;
@@ -965,6 +975,7 @@ void Tracer::handleKeypress(int key, int scancode, int action, int mods)
         matchKeep(GLFW_KEY_F5,          saveImage());
         matchKeep(GLFW_KEY_F6,          toggleDenoiserVisibility(););
         matchKeep(GLFW_KEY_U,           toggleGUI());
+        matchKeep(GLFW_KEY_P,           printDebug());
     }
 }
 #undef matchInit
@@ -984,6 +995,8 @@ void Tracer::pollKeys(float deltaT)
     check(GLFW_KEY_D,           cam.pos += deltaT * cameraSpeed * 10 * cam.right);
     check(GLFW_KEY_R,           cam.pos += deltaT * cameraSpeed * 10 * cam.up);
     check(GLFW_KEY_F,           cam.pos -= deltaT * cameraSpeed * 10 * cam.up);
+    check(GLFW_KEY_E,           cam.pos += deltaT * cameraSpeed * 10 * cam.up);
+    check(GLFW_KEY_Q,           cam.pos -= deltaT * cameraSpeed * 10 * cam.up);
     check(GLFW_KEY_UP,          cameraRotation.y -= 75 * deltaT);
     check(GLFW_KEY_DOWN,        cameraRotation.y += 75 * deltaT);
     check(GLFW_KEY_LEFT,        cameraRotation.x -= 75 * deltaT);

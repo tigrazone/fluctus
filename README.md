@@ -35,7 +35,7 @@ Rename settings_default.json to settings.json. Modify to set default OpenCL devi
 
 | Key                     | Action                                                                                |
 |-------------------------|---------------------------------------------------------------------------------------|
-| **W / A / S / D**       | Move camera (up/down with R/F)                                                        |
+| **W / A / S / D**       | Move camera (up/down with R/F or E/Q)                                                 |
 | **Mouse left**          | Look around                                                                           |
 | **Mouse right**         | Pick DoF focal depth (after setting aperture size)                                    |
 | **Scroll Up / Down**    | Adjust movement speed                                                                 |
@@ -46,6 +46,7 @@ Rename settings_default.json to settings.json. Modify to set default OpenCL devi
 | **F5**                  | Export image                                                                          |
 | **F6**                  | Toggle OptiX Denoiser (if built)                                                      |
 | **H**                   | Toggle light sources (environment/area/both)                                          |
+| **P**                   | Print Camera Position and Direction (via look at being pos + dir)                     |
 | **I / K**               | Adjust max bounces                                                                    |
 | **Z / X**               | Adjust environment map emission                                                       |
 | **L**                   | Open scene selector                                                                   |

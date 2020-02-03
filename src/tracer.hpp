@@ -82,6 +82,8 @@ private:
     void saveHierarchy(const std::string filename);
     void constructHierarchy(std::vector<RTTriangle>& triangles, SplitMode splitMode, ProgressView* progress);
 
+    void printDebug();
+
     void pollKeys(float deltaT); // movement keys
     void updateCamera();
     void updateAreaLight();
