@@ -193,6 +193,7 @@ void Scene::loadObjWithMaterials(const std::string filePath, ProgressView *progr
     std::vector<tinyobj::shape_t> shapesVec;
     std::vector<tinyobj::material_t> materialsVec;
     tinyobj::attrib_t attrib;
+    std::string warn;
     std::string err;
     
     size_t fileNameStart = filePath.find_last_of("\\"); // assume Windows
@@ -201,7 +202,12 @@ void Scene::loadObjWithMaterials(const std::string filePath, ProgressView *progr
     std::string meshName = filePath.substr(fileNameStart + 1);
 
     progress->showMessage("Loading mesh", meshName);
-    bool ret = tinyobj::LoadObj(&attrib, &shapesVec, &materialsVec, &err, filePath.c_str(), folderPath.c_str());
+    bool ret = tinyobj::LoadObj(&attrib, &shapesVec, &materialsVec, &warn, &err, filePath.c_str(), folderPath.c_str(), true, false);
+
+    if (!warn.empty()) // `warn` may contain warning message.
+    {
+        std::cerr << warn << std::endl;
+    }
 
     if (!err.empty()) // `err` may contain warning message.
     {
