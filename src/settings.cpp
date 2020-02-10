@@ -21,6 +21,11 @@ void Settings::init()
     wfBufferSize = 1 << 20; // appropriate for dedicated GPU
     clUseBitstack = false;
     clUseSoA = true;
+    useWavefront = false;
+    useRussianRoulette = false;
+    useSeparateQueues = false;
+    maxPathDepth = 10;
+    tonemap = 2; // UC2 default
 }
 
 inline bool contains(json j, std::string value)
@@ -43,7 +48,7 @@ void Settings::load()
 
     if(!contains(j, "release") || !contains(j, "debug"))
     {
-        std::cout << "Settings file must contain the objects \"release\" and \"debug\"" << std::endl;
+        std::cout << R"(Settings file must contain the objects "release" and "debug")" << std::endl;
         return;
     }
 
@@ -67,6 +72,11 @@ void Settings::import(json j)
     if (contains(j, "clUseBitstack")) this->clUseBitstack = j["clUseBitstack"].get<bool>();
     if (contains(j, "clUseSoA")) this->clUseSoA = j["clUseSoA"].get<bool>();
     if (contains(j, "wfBufferSize")) this->wfBufferSize = j["wfBufferSize"].get<unsigned int>();
+    if (contains(j, "useWavefront")) this->useWavefront = j["useWavefront"].get<bool>();
+    if (contains(j, "useRussianRoulette")) this->useRussianRoulette = j["useRussianRoulette"].get<bool>();
+    if (contains(j, "useSeparateQueues")) this->useSeparateQueues = j["useSeparateQueues"].get<bool>();
+    if (contains(j, "maxPathDepth")) this->maxPathDepth = j["maxPathDepth"].get<int>();
+    if (contains(j, "tonemap")) this->tonemap = j["tonemap"].get<int>();
 
     // Map of numbers 1-5 to scenes (shortcuts)
     if (contains(j, "shortcuts"))

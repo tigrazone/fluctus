@@ -57,6 +57,15 @@ int main(int argc, char* argv[])
             throw TCLAP::ArgException("Invalid value", "samples");
         if (interactiveMode && scenes.size() > 1)
             throw TCLAP::ArgException("Only one scene allowed in interactive mode", "Scene");
+
+        // do the check for command line scenes first
+        if (scenes.empty() && !s.getShortcuts().empty())
+        {
+            for (auto& it : s.getShortcuts())
+            {
+                scenes.push_back(it.second);
+            }
+        }
     }
     catch (TCLAP::ArgException &e)
     {
@@ -80,7 +89,7 @@ int main(int argc, char* argv[])
 
     if (interactiveMode)
     {
-        if (scenes.size() > 0)
+        if (!scenes.empty())
             tracer.init(width, height, scenes[0]);
         else
             tracer.init(width, height, "assets/egyptcat/egyptcat.obj");
@@ -88,7 +97,6 @@ int main(int argc, char* argv[])
         std::cout << "Starting in interactive mode" << std::endl;
         tracer.renderInteractive();
     }
-        
     else
     {
         std::cout << "Starting in batch mode" << std::endl;
@@ -98,7 +106,7 @@ int main(int argc, char* argv[])
             tracer.renderSingle(spp);
         }
 
-        if (scenes.size() == 0)
+        if (scenes.empty())
         {
             tracer.init(width, height);
             tracer.renderSingle(spp);

@@ -9,12 +9,12 @@
 
 namespace fr = FireRays;
 
-Tracer::Tracer(int width, int height) : useWavefront(false)
+Tracer::Tracer(int width, int height) : useWavefront(Settings::getInstance().getUseWavefront())
 {
     resetParams(width, height);
 
     // For getting build options from program state
-    clt::Kernel::setUserPointer((void*)this);
+    clt::Kernel::setUserPointer(static_cast<void*>(this));
 
     // Before UI
     initCamera();
@@ -38,18 +38,20 @@ Tracer::Tracer(int width, int height) : useWavefront(false)
 
 void Tracer::resetParams(int width, int height)
 {
-    float renderScale = Settings::getInstance().getRenderScale();
+    auto& s = Settings::getInstance();
+    const float renderScale = s.getRenderScale();
 
     params.width = static_cast<unsigned int>(width * renderScale);
     params.height = static_cast<unsigned int>(height * renderScale);
-    params.useEnvMap = (cl_uint)false;
-    params.useAreaLight = (cl_uint)true;
+    // env map will be overriden after scene load if it is present
+    params.useEnvMap = cl_uint(false);
+    params.useAreaLight = cl_uint(true);
     params.envMapStrength = 1.0f;
-    params.maxBounces = 10;
-    params.sampleImpl = (cl_uint)true;
-    params.sampleExpl = (cl_uint)true;
-    params.useRoulette = (cl_uint)false;
-    params.wfSeparateQueues = (cl_uint)false;
+    params.maxBounces = s.getMaxPathDepth();
+    params.sampleImpl = cl_uint(true);
+    params.sampleExpl = cl_uint(true);
+    params.useRoulette = cl_uint(s.getUseRussianRoulette());
+    params.wfSeparateQueues = cl_uint(s.getUseSeparateQueues());
 }
 
 // Run whenever a scene is loaded
@@ -64,8 +66,8 @@ void Tracer::init(int width, int height, std::string sceneFile)
     initHierarchy();
 
     // Diagonal gives maximum ray length within the scene
-    AABB_t bounds = bvh->getSceneBounds();
-    params.worldRadius = (cl_float)(length(bounds.max - bounds.min) * 0.5f);
+    const AABB_t bounds = bvh->getSceneBounds();
+    params.worldRadius = cl_float(length(bounds.max - bounds.min) * 0.5f);
 
     window->showMessage("Uploading scene data");
     clctx->uploadSceneData(bvh, scene.get());
@@ -513,7 +515,7 @@ void Tracer::runBenchmark()
 
     // Output report
     std::string outpath = saveFileDialog("Save results", "", { "*.txt", "*.csv" });
-    if (outpath != "")
+    if (!outpath.empty())
     {
         if (!endsWith(outpath, ".csv") && !endsWith(outpath, ".txt")) outpath += ".csv";
         std::ofstream outfile(outpath);
@@ -531,10 +533,10 @@ void Tracer::runBenchmark()
 // Empty file name means scene selector is opened
 void Tracer::selectScene(std::string file)
 {
-    if (file == "")
+    if (file.empty())
     {
-        std::string selected = openFileDialog("Select a scene file", "assets/", { "*.obj", "*.ply", "*.pbrt" });
-        file = (selected != "") ? selected : "assets/egyptcat/egyptcat.obj";
+        const std::string selected = openFileDialog("Select a scene file", "assets/", { "*.obj", "*.ply", "*.pbrt" });
+        file = (!selected.empty()) ? selected : "assets/egyptcat/egyptcat.obj";
     }
 
     scene.reset(new Scene());
@@ -544,8 +546,8 @@ void Tracer::selectScene(std::string file)
 
     sceneHash = scene->hashString();
 
-    std::string envMapName = Settings::getInstance().getEnvMapName();
-    if (envMapName == "")
+    const std::string envMapName = Settings::getInstance().getEnvMapName();
+    if (envMapName.empty())
         return;
 
     if (!envMap || envMap->getName() != envMapName)
@@ -565,7 +567,7 @@ void Tracer::initEnvMap()
     // Bool operator => check if ptr is empty
     if (envMap && envMap->valid())
     {
-        params.useEnvMap = (cl_int)true;
+        params.useEnvMap = cl_int(true);
         this->hasEnvMap = true;
         clctx->createEnvMap(envMap.get());
     }
@@ -574,8 +576,8 @@ void Tracer::initEnvMap()
 // Check if old hierarchy can be reused
 void Tracer::initHierarchy()
 {
-	std::string hashFile = "data/hierarchies/hierarchy_" + sceneHash + ".bin";
-    std::ifstream input(hashFile, std::ios::in);
+    const std::string hashFile = "data/hierarchies/hierarchy_" + sceneHash + ".bin";
+    const std::ifstream input(hashFile, std::ios::in);
 
     if (input.good())
     {
@@ -780,7 +782,7 @@ void Tracer::initPostProcessing()
 {
     PostProcessParams p;
     p.exposure = 1.0f;
-    p.tmOperator = 2; // UC2 default
+    p.tmOperator = Settings::getInstance().getTonemap();
 
     params.ppParams = p;
     paramsUpdatePending = true;
