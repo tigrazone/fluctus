@@ -1,3 +1,4 @@
+#include <ctime>
 #include "tracer.hpp"
 #include "window.hpp"
 #include "progressview.hpp"
