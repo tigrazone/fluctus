@@ -40,7 +40,8 @@ kernel void process(
         color.xyz = uncharted2Tonemap(color.xyz);
 
     // Gamma correction
-    color.xyz = pow(color.xyz, 1.0f / 2.2f);
+    if (par.tmOperator != 3)
+        color.xyz = pow(color.xyz, 1.0f / 2.2f);
     
     // Output color
     vstore4(color, gid, pixelsPreview);

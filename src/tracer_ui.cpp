@@ -318,7 +318,7 @@ void Tracer::addTonemapSettings(Widget *parent)
     opWidget->setLayout(new BoxLayout(Orientation::Horizontal));
     auto opLabel = new Label(opWidget, "Operator");
     opLabel->setFixedWidth(60);
-    const std::vector<std::string> desc = { "Linear", "Reinhard", "Uncharted 2" };
+    const std::vector<std::string> desc = { "Linear", "Reinhard", "Uncharted 2", "Raw" };
     auto opBox = new ComboBox(opWidget, desc);
     uiMapping["TONEMAP_OP_BOX"] = opBox;
     opBox->setFixedWidth(172);
