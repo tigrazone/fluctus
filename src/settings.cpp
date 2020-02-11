@@ -165,7 +165,7 @@ void Settings::calculateCameraRotation()
     vfloat3& dir = cameraSettings.dir;
     dir.normalize();
     cameraSettings.cameraRotation.x = toDeg(std::atan2(dir.x, -dir.z));
-    cameraSettings.cameraRotation.y = -toDeg(std::atan2(dir.y, std::sqrt(1 - dir.y * dir.y)));
+    cameraSettings.cameraRotation.y = -toDeg(std::asin(dir.y));
 }
 
 void Settings::calculateCameraMatrix()
