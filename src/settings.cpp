@@ -109,8 +109,11 @@ void Settings::import(json j)
             const auto values = map["dir"].get<std::vector<float>>();
             if (values.size() == 3)
             {
-                cameraSettings.dir = vfloat3(values[0], values[1], values[2]);
-                calculateCameraRotation();
+                const vfloat3 dir = vfloat3(values[0], values[1], values[2]);
+                if (dir.sqnorm() > 1E-3) {
+                    cameraSettings.dir = dir;
+                    calculateCameraRotation();
+                }
             }
         }
         // this overrides dir if existent
@@ -119,10 +122,9 @@ void Settings::import(json j)
             const auto values = map["lookAt"].get<std::vector<float>>();
             if (values.size() == 3)
             {
-                const vfloat3 dir = (vfloat3(values[0], values[1], values[2]) - cameraSettings.pos);
+                const vfloat3 dir = vfloat3(values[0], values[1], values[2]) - cameraSettings.pos;
                 if (dir.sqnorm() > 1E-3) {
                     cameraSettings.dir = dir;
-                    cameraSettings.dir.normalize();
                     calculateCameraRotation();
                 }
             }
@@ -160,7 +162,8 @@ void Settings::import(json j)
 
 void Settings::calculateCameraRotation()
 {
-    const vfloat3& dir = cameraSettings.dir;
+    vfloat3& dir = cameraSettings.dir;
+    dir.normalize();
     cameraSettings.cameraRotation.x = toDeg(std::atan2(dir.x, -dir.z));
     cameraSettings.cameraRotation.y = -toDeg(std::atan2(dir.y, std::sqrt(1 - dir.y * dir.y)));
 }
@@ -171,7 +174,7 @@ void Settings::calculateCameraMatrix()
 
     cameraSettings.right = vfloat3(rot.m00, rot.m01, rot.m02);
     cameraSettings.up = vfloat3(rot.m10, rot.m11, rot.m12);
-    cameraSettings.dir = -vfloat3(rot.m20, rot.m21, rot.m22); // camera points in the negative z-direction
+    cameraSettings.dir = -vfloat3(rot.m20, rot.m21, rot.m22);
 }
 
 #undef VEC_UP
