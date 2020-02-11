@@ -20,6 +20,7 @@ typedef FireRays::float2 vfloat2;
 #define M_INV_PI (0.3183098861837907f)
 #define M_2PI_F (6.2831853071795864f)
 #define toRad(deg) (deg * PI / 180)
+#define toDeg(rad) (rad * 180 / PI)
 
 // For handling SoA data, only used on GPU
 // Variable names gid, numTasks are assumed for brevity

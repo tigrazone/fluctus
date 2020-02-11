@@ -160,12 +160,14 @@ void Settings::import(json j)
 
 void Settings::calculateCameraRotation()
 {
-    const vfloat3 dir = cameraSettings.dir;
+    const vfloat3& dir = cameraSettings.dir;
+    cameraSettings.cameraRotation.x = toDeg(std::atan2(dir.x, -dir.z));
+    cameraSettings.cameraRotation.y = -toDeg(std::atan2(dir.y, std::sqrt(1 - dir.y * dir.y)));
 }
 
 void Settings::calculateCameraMatrix()
 {
-    FireRays::matrix rot = rotation(VEC_RIGHT, toRad(cameraSettings.cameraRotation.y)) * rotation(VEC_UP, toRad(cameraSettings.cameraRotation.x));
+    const FireRays::matrix rot = rotation(VEC_RIGHT, toRad(cameraSettings.cameraRotation.y)) * rotation(VEC_UP, toRad(cameraSettings.cameraRotation.x));
 
     cameraSettings.right = vfloat3(rot.m00, rot.m01, rot.m02);
     cameraSettings.up = vfloat3(rot.m10, rot.m11, rot.m12);
