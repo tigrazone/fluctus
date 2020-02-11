@@ -762,18 +762,20 @@ void Tracer::constructHierarchy(std::vector<RTTriangle>& triangles, SplitMode sp
 
 void Tracer::initCamera()
 {
+    auto s = Settings::getInstance().getCameraSettings();
     Camera cam;
-    cam.pos = fr::float3(0.0f, 1.0f, 3.5f);
-    cam.right = fr::float3(1.0f, 0.0f, 0.0f);
-    cam.up = fr::float3(0.0f, 1.0f, 0.0f);
-    cam.dir = fr::float3(0.0f, 0.0f, -1.0f);
-    cam.fov = 60.0f;
-    cam.apertureSize = 0.0f;
-    cam.focalDist = 0.5f;
+    cam.pos = s.pos;
+    cam.right = s.right;
+    cam.up = s.up;
+    cam.dir = s.dir;
+    cam.fov = s.fov;
+    cam.apertureSize = s.apertureSize;
+    cam.focalDist = s.focalDist;
+
+    cameraRotation = s.cameraRotation;
+    cameraSpeed = 1.0f;
 
     params.camera = cam;
-    cameraRotation = fr::float2(0.0f);
-    cameraSpeed = 1.0f;
 
     paramsUpdatePending = true;
 }
@@ -804,14 +806,14 @@ void Tracer::initAreaLight()
 void Tracer::updateCamera()
 {
     if(cameraRotation.x < 0) cameraRotation.x += 360.0f;
-    if(cameraRotation.y < 0) cameraRotation.y += 360.0f;
     if(cameraRotation.x > 360.0f) cameraRotation.x -= 360.0f;
-    if(cameraRotation.y > 360.0f) cameraRotation.y -= 360.0f;
+    if (cameraRotation.y < -90) cameraRotation.y = -90;
+    if (cameraRotation.y > 90) cameraRotation.y = 90;
 
-    auto right = scene->getWorldRight();
-    auto up = scene->getWorldUp();
+    const auto right = scene->getWorldRight();
+    const auto up = scene->getWorldUp();
 
-    fr::matrix rot = rotation(right, toRad(cameraRotation.y)) * rotation(up, toRad(cameraRotation.x));
+    const fr::matrix rot = rotation(right, toRad(cameraRotation.y)) * rotation(up, toRad(cameraRotation.x));
 
     params.camera.right = fr::float3(rot.m00, rot.m01, rot.m02);
     params.camera.up =    fr::float3(rot.m10, rot.m11, rot.m12);

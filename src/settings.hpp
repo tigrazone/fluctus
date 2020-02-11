@@ -3,6 +3,19 @@
 #include <string>
 #include <map>
 #include "json.hpp"
+#include "clcontext.hpp"
+
+typedef struct {
+    vfloat3 pos;
+    vfloat3 right;
+    vfloat3 up;
+    vfloat3 dir;
+    cl_float fov;
+    cl_float apertureSize;
+    cl_float focalDist;
+    vfloat2 cameraRotation;
+    float cameraSpeed;
+} CameraSettings;
 
 class Settings
 {
@@ -33,12 +46,15 @@ public:
     bool getUseSeparateQueues() { return useSeparateQueues; }
     int getMaxPathDepth() { return maxPathDepth; }
     int getTonemap() { return tonemap; }
+    CameraSettings getCameraSettings() { return cameraSettings; }
 
 private:
     Settings();
     void init();
     void load();
     void import(nlohmann::json j);
+    void calculateCameraRotation();
+    void calculateCameraMatrix();
 
     // Contents of settings singleton
     std::string platformName;
@@ -56,4 +72,5 @@ private:
     bool useSeparateQueues;
     int maxPathDepth;
     int tonemap;
+    CameraSettings cameraSettings;
 };
