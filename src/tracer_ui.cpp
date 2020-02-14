@@ -414,11 +414,11 @@ void Tracer::addAreaLightSettings(Widget *parent)
     });
 
     // Intensity
-    FloatWidget* intensityWidget = addFloatWidget(alPopup, "Intensity", "AL_INT", 0.1f, 300.0f, [this](float val) {
-        float sqnorm = params.areaLight.E.sqnorm();
-        if (sqnorm == 0.0f) return;
-        params.areaLight.E /= std::sqrt(sqnorm);
-        params.areaLight.E *= val;
+    FloatWidget* intensityWidget = addFloatWidget(alPopup, "Intensity", "AL_INT", 0.1f, 100.0f, [this](float val) {
+        const fr::float3 E = params.areaLight.E;
+        if (val < 1E-5) return;
+        const float intensityFactor = val / float(E.x + E.y + E.z) * 3.f;
+        params.areaLight.E *= intensityFactor;
         paramsUpdatePending = true;
     });
 
@@ -430,12 +430,13 @@ void Tracer::addAreaLightSettings(Widget *parent)
     auto colorPicker = new ColorPicker(cp);
     colorPicker->setFixedWidth(145);
     const fr::float3 EInit = Settings::getInstance().getAreaLightSettings().E;
-    const auto color = EInit / std::max({ EInit.x, EInit.y, EInit.z });
+    auto color = EInit / float(EInit.x + EInit.y + EInit.z) / 3.f;
+    color.normalize();
     colorPicker->setColor(Color(Vector3f(color.x, color.y, color.z), 1.0f));
     colorPicker->setFinalCallback([&](const Color &c) {
         const fr::float3 E = params.areaLight.E;
-        const float intensity = std::max({ E.x, E.y, E.z });
-        params.areaLight.E = intensity * fr::float3(c[0], c[1], c[2]);
+        const float intensityFactor = float(E.x + E.y + E.z) / float(c[0] + c[1] + c[2]);
+        params.areaLight.E = fr::float3(c[0], c[1], c[2]) * intensityFactor;
         paramsUpdatePending = true;
     });
 }
@@ -483,8 +484,9 @@ void Tracer::updateGUI()
 
     auto alIntBox = static_cast<FloatBox<cl_float>*>(uiMapping["AL_INT_BOX"]);
     auto alIntSlider = static_cast<Slider*>(uiMapping["AL_INT_SLIDER"]);
-    alIntBox->setValue(std::sqrt(params.areaLight.E.sqnorm()));
-    alIntSlider->setValue(std::sqrt(params.areaLight.E.sqnorm()));
+    const float intensity = float(params.areaLight.E.x + params.areaLight.E.y + params.areaLight.E.z) / 3.f;
+    alIntBox->setValue(intensity);
+    alIntSlider->setValue(intensity);
 
     auto envMapToggle = static_cast<CheckBox*>(uiMapping["ENV_MAP_TOGGLE"]);
     auto explSampleToggle = static_cast<CheckBox*>(uiMapping["EXPL_SAMPL_TOGGLE"]);

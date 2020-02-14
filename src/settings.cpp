@@ -46,7 +46,7 @@ void Settings::init()
         FireRays::float3(0.0f, 1.0f, 0.0f),
         FireRays::float4(-1.0f, 0.0f, 0.0f, 0.0f),
         FireRays::float4(1.0f, 1.0f, 0.0f, 1.0f),
-        FireRays::float3(1.0f, 1.0f, 1.0f) * 200.0f,
+        FireRays::float3(1.0f, 1.0f, 1.0f) * 100.f,
         FireRays::float2(0.5f, 0.5f)
     };
 }
