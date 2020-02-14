@@ -17,6 +17,15 @@ typedef struct {
     float cameraSpeed;
 } CameraSettings;
 
+typedef struct {
+    vfloat3 right;
+    vfloat3 up;
+    vfloat3 N;
+    vfloat3 pos;
+    vfloat3 E;
+    vfloat2 size;
+} AreaLightSettings;
+
 class Settings
 {
 public:
@@ -47,6 +56,7 @@ public:
     int getMaxPathDepth() { return maxPathDepth; }
     int getTonemap() { return tonemap; }
     CameraSettings getCameraSettings() { return cameraSettings; }
+    AreaLightSettings getAreaLightSettings() { return areaLightSettings; }
 
 private:
     Settings();
@@ -73,4 +83,5 @@ private:
     int maxPathDepth;
     int tonemap;
     CameraSettings cameraSettings;
+    AreaLightSettings areaLightSettings;
 };

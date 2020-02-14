@@ -792,12 +792,13 @@ void Tracer::initPostProcessing()
 
 void Tracer::initAreaLight()
 {
-    params.areaLight.E = fr::float3(1.0f, 1.0f, 1.0f) * 200.0f;
-    params.areaLight.right = fr::float3(0.0f, 0.0f, -1.0f);
-    params.areaLight.up = fr::float3(0.0f, 1.0f, 0.0f);
-    params.areaLight.N = fr::float4(-1.0f, 0.0f, 0.0f, 0.0f);
-    params.areaLight.pos = fr::float4(1.0f, 1.0f, 0.0f, 1.0f);
-    params.areaLight.size = fr::float2(0.5f, 0.5f);
+    const auto s = Settings::getInstance().getAreaLightSettings();
+    params.areaLight.E = s.E;
+    params.areaLight.right = s.right;
+    params.areaLight.up = s.up;
+    params.areaLight.N = s.N;
+    params.areaLight.pos = s.pos;
+    params.areaLight.size = s.size;
     paramsUpdatePending = true;
 }
 
@@ -1006,14 +1007,14 @@ void Tracer::pollKeys(float deltaT)
     check(GLFW_KEY_DOWN,        cameraRotation.y += 75 * deltaT);
     check(GLFW_KEY_LEFT,        cameraRotation.x -= 75 * deltaT);
     check(GLFW_KEY_RIGHT,       cameraRotation.x += 75 * deltaT);
-    check(GLFW_KEY_PERIOD,      cam.fov = (cl_float)std::min(cam.fov + 70 * deltaT, 175.0f));
-    check(GLFW_KEY_COMMA,       cam.fov = (cl_float)std::max(cam.fov - 70 * deltaT, 5.0f));
-    check(GLFW_KEY_8,           params.areaLight.size /= (cl_float)(1 + 5 * deltaT));
-    check(GLFW_KEY_9,           params.areaLight.size *= (cl_float)(1 + 5 * deltaT));
-    check(GLFW_KEY_PAGE_DOWN,   params.areaLight.E /= (cl_float)(1 + 10 * deltaT));
-    check(GLFW_KEY_PAGE_UP,     params.areaLight.E *= (cl_float)(1 + 10 * deltaT));
-    check(GLFW_KEY_X,           params.envMapStrength *= (cl_float)(1 + 5 * deltaT));
-    check(GLFW_KEY_Z,           params.envMapStrength /= (cl_float)(1 + 5 * deltaT));
+    check(GLFW_KEY_PERIOD,      cam.fov = cl_float(std::min(cam.fov + 70 * deltaT, 175.0f)));
+    check(GLFW_KEY_COMMA,       cam.fov = cl_float(std::max(cam.fov - 70 * deltaT, 5.0f)));
+    check(GLFW_KEY_8,           params.areaLight.size /= cl_float(1 + 5 * deltaT));
+    check(GLFW_KEY_9,           params.areaLight.size *= cl_float(1 + 5 * deltaT));
+    check(GLFW_KEY_PAGE_DOWN,   params.areaLight.E /= cl_float(1 + 10 * deltaT));
+    check(GLFW_KEY_PAGE_UP,     params.areaLight.E *= cl_float(1 + 10 * deltaT));
+    check(GLFW_KEY_X,           params.envMapStrength *= cl_float(1 + 5 * deltaT));
+    check(GLFW_KEY_Z,           params.envMapStrength /= cl_float(1 + 5 * deltaT));
 
     if(paramsUpdatePending)
     {

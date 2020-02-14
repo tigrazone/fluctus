@@ -41,6 +41,14 @@ void Settings::init()
         vfloat2(0.0f),
         1.0f
     };
+    areaLightSettings = {
+        FireRays::float3(0.0f, 0.0f, -1.0f),
+        FireRays::float3(0.0f, 1.0f, 0.0f),
+        FireRays::float4(-1.0f, 0.0f, 0.0f, 0.0f),
+        FireRays::float4(1.0f, 1.0f, 0.0f, 1.0f),
+        FireRays::float3(1.0f, 1.0f, 1.0f) * 200.0f,
+        FireRays::float2(0.5f, 0.5f)
+    };
 }
 
 inline bool contains(json j, std::string value)
@@ -92,6 +100,17 @@ void Settings::import(json j)
     if (contains(j, "useSeparateQueues")) this->useSeparateQueues = j["useSeparateQueues"].get<bool>();
     if (contains(j, "maxPathDepth")) this->maxPathDepth = j["maxPathDepth"].get<int>();
     if (contains(j, "tonemap")) this->tonemap = j["tonemap"].get<int>();
+
+    // Map of numbers 1-5 to scenes (shortcuts)
+    if (contains(j, "shortcuts"))
+    {
+        json map = j["shortcuts"];
+        for (unsigned int i = 1; i < 6; i++)
+        {
+            std::string numeral = std::to_string(i);
+            if (contains(map, numeral)) this->shortcuts[i] = map[numeral].get<std::string>();
+        }
+    }
 
     if (contains(j, "camera"))
     {
@@ -148,14 +167,55 @@ void Settings::import(json j)
         if (contains(map, "cameraSpeed")) this->cameraSettings.cameraSpeed = map["cameraSpeed"].get<float>();
     }
 
-    // Map of numbers 1-5 to scenes (shortcuts)
-    if (contains(j, "shortcuts"))
+    if (contains(j, "areaLight"))
     {
-        json map = j["shortcuts"];
-        for (unsigned int i = 1; i < 6; i++)
+        json map = j["areaLight"];
+        if (contains(map, "pos"))
         {
-            std::string numeral = std::to_string(i);
-            if (contains(map, numeral)) this->shortcuts[i] = map[numeral].get<std::string>();
+            const auto values = map["pos"].get<std::vector<float>>();
+            if (values.size() == 3)
+            {
+                areaLightSettings.pos = FireRays::float4(values[0], values[1], values[2], 1.0f);
+            }
+        }
+        if (contains(map, "N"))
+        {
+            const auto values = map["N"].get<std::vector<float>>();
+            if (values.size() == 3)
+            {
+                areaLightSettings.N = FireRays::float4(values[0], values[1], values[2], 0.0f);
+                areaLightSettings.right = cross(areaLightSettings.N, VEC_UP);
+                areaLightSettings.up = cross(areaLightSettings.right, areaLightSettings.N);
+            }
+        }
+        if (contains(map, "E"))
+        {
+            const auto values = map["E"].get<std::vector<float>>();
+            switch (values.size()) {
+            case 1:
+                areaLightSettings.E = vfloat3(values[0]);
+                areaLightSettings.E.w = 0.f;
+                break;
+            case 3:
+                areaLightSettings.E = vfloat3(values[0], values[1], values[2]);
+                break;
+            default:
+                break;
+            }
+        }
+        if (contains(map, "size"))
+        {
+            const auto values = map["size"].get<std::vector<float>>();
+            switch (values.size()) {
+            case 1:
+                areaLightSettings.size = vfloat2(values[0]);
+                break;
+            case 2:
+                areaLightSettings.size = vfloat2(values[0], values[1]);
+                break;
+            default:
+                break;
+            }
         }
     }
 }

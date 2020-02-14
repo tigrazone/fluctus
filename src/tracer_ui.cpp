@@ -57,7 +57,7 @@ void Tracer::setupToolbar()
     auto exportButton = new Button(tools, "Save image", ENTYPO_ICON_CAMERA);
     exportButton->setCallback([&]() {
         auto name = saveFileDialog("Save image as", "", { "*.png", "*.hdr", "*.bmp" });
-        if (name == "") return;        
+        if (name.empty()) return;        
         if (name.find('.') == std::string::npos) name += ".png";
 #ifdef WITH_OPTIX
         if (useDenoiser)
@@ -116,7 +116,7 @@ FloatWidget* Tracer::addFloatWidget(Popup* parent, std::string title, std::strin
     return w;
 }
 
-void Tracer::addRendererSettings(nanogui::Widget *parent)
+void Tracer::addRendererSettings(Widget *parent)
 {
     Settings &s = Settings::getInstance();
 
@@ -210,7 +210,7 @@ void Tracer::addRendererSettings(nanogui::Widget *parent)
     depthBox->setMinMaxValues(0, 99);
     depthBox->setValueIncrement(1);
     depthBox->setCallback([&](int value) {
-        params.maxBounces = (cl_uint)value;
+        params.maxBounces = cl_uint(value);
         paramsUpdatePending = true;
     });
     auto depthDesc = new Label(depthPanel, "Maximum path depth");
@@ -234,7 +234,7 @@ void Tracer::addRendererSettings(nanogui::Widget *parent)
     box->setSpinnable(true);
     box->setMinValue(1);
     box->setValueIncrement(1);
-    box->setValue((int)(s.getRenderScale() * 100));
+    box->setValue(int(s.getRenderScale() * 100));
     box->setUnits("%");
     box->setFixedSize(Vector2i(65, 25));
     box->setFontSize(20);
@@ -248,7 +248,7 @@ void Tracer::addRendererSettings(nanogui::Widget *parent)
     });
 
     slider->setCallback([box](float value) {
-        box->setValue((int)(value * 100));
+        box->setValue(int(value * 100));
     });
 
     slider->setFinalCallback([&](float value) {
@@ -268,7 +268,7 @@ void Tracer::addCameraSettings(Widget *parent)
 
     // FOV
     FloatWidget* fovWidget = addFloatWidget(camPopup, "FOV", "FOV", 0.01f, 120.0f, [this](float val) {
-        params.camera.fov = (cl_float)val;
+        params.camera.fov = cl_float(val);
         paramsUpdatePending = true;
     });
 
@@ -280,7 +280,7 @@ void Tracer::addCameraSettings(Widget *parent)
 
     // Aperture size
     FloatWidget* apertureWidget = addFloatWidget(camPopup, "Aperture", "CAM_APERTURE", 0.0f, 0.003f, [this](float val) {
-        params.camera.apertureSize = (cl_float)val;
+        params.camera.apertureSize = cl_float(val);
         paramsUpdatePending = true;
     });
 
@@ -374,7 +374,7 @@ void Tracer::addEnvMapSettings(Widget *parent)
     envLoadBtn->setCallback([&]() {
         window->showMessage("Loading environment map");
         std::string name = openFileDialog("Select environment map", "assets/env_maps/", { "*.hdr" });
-        if (name == "") return;
+        if (name.empty()) return;
 
         Settings::getInstance().setEnvMapName(name);
         if (!envMap || envMap->getName() != name)
@@ -394,7 +394,7 @@ void Tracer::addEnvMapSettings(Widget *parent)
 
     // Strength
     FloatWidget* envEmissionWidget = addFloatWidget(envPopup, "Strength", "ENV_MAP", 0.1f, 10.0f, [this](float val) {
-        params.envMapStrength = (cl_float)val;
+        params.envMapStrength = cl_float(val);
         paramsUpdatePending = true;
     });
 }
@@ -408,13 +408,13 @@ void Tracer::addAreaLightSettings(Widget *parent)
 
     // Size
     FloatWidget* sizeWidget = addFloatWidget(alPopup, "Size", "AL_SIZE", 0.1f, 30.0f, [this](float val) {
-        params.areaLight.size.x = (cl_float)val;
-        params.areaLight.size.y = (cl_float)val;
+        params.areaLight.size.x = cl_float(val);
+        params.areaLight.size.y = cl_float(val);
         paramsUpdatePending = true;
     });
 
     // Intensity
-    FloatWidget* intensityWidget = addFloatWidget(alPopup, "Intensity", "AL_INT", 0.1f, 100.0f, [this](float val) {
+    FloatWidget* intensityWidget = addFloatWidget(alPopup, "Intensity", "AL_INT", 0.1f, 300.0f, [this](float val) {
         float sqnorm = params.areaLight.E.sqnorm();
         if (sqnorm == 0.0f) return;
         params.areaLight.E /= std::sqrt(sqnorm);
@@ -427,12 +427,14 @@ void Tracer::addAreaLightSettings(Widget *parent)
     cp->setLayout(new BoxLayout(Orientation::Horizontal, Alignment::Middle, 0, 10));
     auto cl = new Label(cp, "Color");
     cl->setFixedWidth(50);
-    auto colorPicker = new nanogui::ColorPicker(cp);
+    auto colorPicker = new ColorPicker(cp);
     colorPicker->setFixedWidth(145);
-    colorPicker->setColor(nanogui::Color(Vector3f(1.0f, 1.0f, 1.0f), 1.0f));
-    colorPicker->setFinalCallback([&](const nanogui::Color &c) {
-        fr::float3 E = params.areaLight.E;
-        float intensity = std::max(E.x, std::max(E.y, E.z));
+    const fr::float3 EInit = Settings::getInstance().getAreaLightSettings().E;
+    const auto color = EInit / std::max({ EInit.x, EInit.y, EInit.z });
+    colorPicker->setColor(Color(Vector3f(color.x, color.y, color.z), 1.0f));
+    colorPicker->setFinalCallback([&](const Color &c) {
+        const fr::float3 E = params.areaLight.E;
+        const float intensity = std::max({ E.x, E.y, E.z });
         params.areaLight.E = intensity * fr::float3(c[0], c[1], c[2]);
         paramsUpdatePending = true;
     });
@@ -533,7 +535,7 @@ void Tracer::updateGUI()
     scaleSlider->setValue(Settings::getInstance().getRenderScale());
 
     auto scaleBox = static_cast<IntBox<int>*>(uiMapping["RENDER_SCALE_BOX"]);
-    scaleBox->setValue((int)(Settings::getInstance().getRenderScale() * 100));
+    scaleBox->setValue(int(Settings::getInstance().getRenderScale() * 100));
 }
 
 
