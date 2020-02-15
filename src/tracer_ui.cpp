@@ -430,7 +430,6 @@ void Tracer::addAreaLightSettings(Widget *parent)
     colorPicker->setFixedWidth(145);
     const fr::float3 EInit = Settings::getInstance().getAreaLightSettings().E;
     auto color = EInit / maxf3(EInit);
-    color.normalize();
     colorPicker->setColor(Color(Vector3f(color.x, color.y, color.z), 1.0f));
     colorPicker->setFinalCallback([&](const Color &c) {
         const fr::float3 E = params.areaLight.E;
