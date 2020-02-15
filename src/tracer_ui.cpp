@@ -417,8 +417,7 @@ void Tracer::addAreaLightSettings(Widget *parent)
     FloatWidget* intensityWidget = addFloatWidget(alPopup, "Intensity", "AL_INT", 0.1f, 100.0f, [this](float val) {
         const fr::float3 E = params.areaLight.E;
         if (val < 1E-5) return;
-        const float intensityFactor = val / float(E.x + E.y + E.z) * 3.f;
-        params.areaLight.E *= intensityFactor;
+        params.areaLight.E *= val / maxf3(E);
         paramsUpdatePending = true;
     });
 
@@ -430,13 +429,13 @@ void Tracer::addAreaLightSettings(Widget *parent)
     auto colorPicker = new ColorPicker(cp);
     colorPicker->setFixedWidth(145);
     const fr::float3 EInit = Settings::getInstance().getAreaLightSettings().E;
-    auto color = EInit / float(EInit.x + EInit.y + EInit.z) / 3.f;
+    auto color = EInit / maxf3(EInit);
     color.normalize();
     colorPicker->setColor(Color(Vector3f(color.x, color.y, color.z), 1.0f));
     colorPicker->setFinalCallback([&](const Color &c) {
         const fr::float3 E = params.areaLight.E;
-        const float intensityFactor = float(E.x + E.y + E.z) / float(c[0] + c[1] + c[2]);
-        params.areaLight.E = fr::float3(c[0], c[1], c[2]) * intensityFactor;
+        const fr::float3 newE = fr::float3(c[0], c[1], c[2]);
+        params.areaLight.E = newE / maxf3(newE) * maxf3(E);
         paramsUpdatePending = true;
     });
 }
@@ -484,9 +483,8 @@ void Tracer::updateGUI()
 
     auto alIntBox = static_cast<FloatBox<cl_float>*>(uiMapping["AL_INT_BOX"]);
     auto alIntSlider = static_cast<Slider*>(uiMapping["AL_INT_SLIDER"]);
-    const float intensity = float(params.areaLight.E.x + params.areaLight.E.y + params.areaLight.E.z) / 3.f;
-    alIntBox->setValue(intensity);
-    alIntSlider->setValue(intensity);
+    alIntBox->setValue(maxf3(params.areaLight.E));
+    alIntSlider->setValue(maxf3(params.areaLight.E));
 
     auto envMapToggle = static_cast<CheckBox*>(uiMapping["ENV_MAP_TOGGLE"]);
     auto explSampleToggle = static_cast<CheckBox*>(uiMapping["EXPL_SAMPL_TOGGLE"]);

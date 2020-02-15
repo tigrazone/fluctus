@@ -14,6 +14,7 @@ typedef float3 vfloat3;
 #include "math/float3.hpp"
 typedef FireRays::float3 vfloat3;
 typedef FireRays::float2 vfloat2;
+#define maxf3(val) std::max({val.x, val.y, val.z})
 #endif
 
 #define PI (3.14159265358979323846f)
