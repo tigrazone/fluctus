@@ -185,7 +185,16 @@ void Settings::import(json j)
             {
                 areaLightSettings.N = FireRays::float4(values[0], values[1], values[2], 0.0f);
                 areaLightSettings.right = cross(areaLightSettings.N, VEC_UP);
+                if (areaLightSettings.right.sqnorm() < 1E-6)
+                {
+                    // N and Up are multiples of each other --> use the known right vector
+                    areaLightSettings.right = VEC_RIGHT * dot(areaLightSettings.N, VEC_UP);
+                }
                 areaLightSettings.up = cross(areaLightSettings.right, areaLightSettings.N);
+
+                areaLightSettings.N.normalize();
+                areaLightSettings.right.normalize();
+                areaLightSettings.up.normalize();
             }
         }
         if (contains(map, "E"))
