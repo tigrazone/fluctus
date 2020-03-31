@@ -458,7 +458,7 @@ void Tracer::addStateSettings(Widget *parent)
     loadStateBtn->setCallback([&] { loadState(); paramsUpdatePending = true; });
 
     Button *saveStateBtn = new Button(statePanel, "Save", ENTYPO_ICON_DOWNLOAD);
-    saveStateBtn->setCallback([&] { saveState(); paramsUpdatePending = true; });
+    saveStateBtn->setCallback([&] { saveState(); });
 }
 
 
