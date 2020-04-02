@@ -16,6 +16,7 @@ int main(int argc, char* argv[])
     int spp;
     bool interactiveMode;
     std::vector<std::string> scenes;
+    unsigned int defaultScene = 0;
 
     // Parse command line arguments
     try
@@ -65,6 +66,7 @@ int main(int argc, char* argv[])
             {
                 scenes.push_back(it.second);
             }
+            defaultScene = s.getDefaultScene() < scenes.size() ? s.getDefaultScene() : 0;
         }
     }
     catch (TCLAP::ArgException &e)
@@ -90,7 +92,7 @@ int main(int argc, char* argv[])
     if (interactiveMode)
     {
         if (!scenes.empty())
-            tracer.init(width, height, scenes[0]);
+            tracer.init(width, height, scenes[defaultScene]);
         else
             tracer.init(width, height, "assets/egyptcat/egyptcat.obj");
         

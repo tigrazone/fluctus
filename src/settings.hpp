@@ -43,6 +43,7 @@ public:
     std::string getEnvMapName() { return envMapName; }
     void setEnvMapName(const std::string name) { envMapName = name; }
     std::map<unsigned int, std::string> getShortcuts() { return shortcuts; }
+    unsigned int getDefaultScene() { return defaultScene; }
     int getWindowWidth() { return windowWidth; }
     int getWindowHeight() { return windowHeight; }
     float getRenderScale() { return renderScale; }
@@ -71,6 +72,7 @@ private:
     std::string deviceName;
     std::string envMapName;
     std::map<unsigned int, std::string> shortcuts;
+    unsigned int defaultScene;
     unsigned int wfBufferSize;
     bool clUseBitstack;
     bool clUseSoA;

@@ -19,6 +19,7 @@ void Settings::init()
     platformName = "";
     deviceName = "";
     envMapName = "";
+    defaultScene = 0;
     renderScale = 1.0f;
     windowWidth = 640;
     windowHeight = 480;
@@ -109,6 +110,15 @@ void Settings::import(json j)
         {
             std::string numeral = std::to_string(i);
             if (contains(map, numeral)) this->shortcuts[i] = map[numeral].get<std::string>();
+        }
+    }
+    if (contains(j, "defaultScene"))
+    {
+        unsigned int defaultSceneNumber = j["defaultScene"].get<unsigned int>();
+        auto scenePair = this->shortcuts.find(defaultSceneNumber);
+        if(scenePair != this->shortcuts.end())
+        {
+            this->defaultScene = distance(this->shortcuts.begin(), scenePair);
         }
     }
 
