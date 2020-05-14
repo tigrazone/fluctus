@@ -53,8 +53,8 @@ Rename settings_default.json to settings.json. Modify to set default OpenCL devi
 | **M**                   | Switch sampling mode                                                                  |
 | **U**                   | Toggle UI                                                                             |
 | **Page Up / Down**      | Adjust area light emission                                                            |
-| **1-5**                 | Select scene 1-5 (if set in settings.json)                                            |
-| **7**                   | Switch metween microkernel/wavefront                                                  |
+| **1-6**                 | Select scene 1-6 (if set in settings.json)                                            |
+| **7**                   | Switch between microkernel/wavefront                                                  |
 | **8 / 9**               | Change area light size                                                                |
 | **, / .**               | Change FOV                                                                            |
 

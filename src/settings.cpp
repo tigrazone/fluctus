@@ -106,7 +106,7 @@ void Settings::import(json j)
     if (contains(j, "shortcuts"))
     {
         json map = j["shortcuts"];
-        for (unsigned int i = 1; i < 6; i++)
+        for (unsigned int i = 1; i < 7; i++)
         {
             std::string numeral = std::to_string(i);
             if (contains(map, numeral)) this->shortcuts[i] = map[numeral].get<std::string>();

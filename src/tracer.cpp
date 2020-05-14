@@ -965,6 +965,7 @@ void Tracer::handleKeypress(int key, int scancode, int action, int mods)
         matchInit(GLFW_KEY_3,           quickLoadScene(3));
         matchInit(GLFW_KEY_4,           quickLoadScene(4));
         matchInit(GLFW_KEY_5,           quickLoadScene(5));
+        matchInit(GLFW_KEY_6,           quickLoadScene(6));
         matchInit(GLFW_KEY_L,           init(params.width, params.height));  // opens scene selector
         matchInit(GLFW_KEY_H,           toggleLightSourceMode());
         matchInit(GLFW_KEY_7,           toggleRenderer());
