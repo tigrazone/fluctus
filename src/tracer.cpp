@@ -916,7 +916,7 @@ void Tracer::handleFileDrop(int count, const char **filenames)
     for (int i = 0; i < count; i++)
     {
         std::string file(filenames[i]);
-        if (endsWithAny(file, { ".obj", ".ply", ".pbf", ".pbrt" }))
+        if (endsWithAny(file, { ".obj", ".ply", ".pbf", ".pbrt", ".sc.json" }))
         {
             init(params.width, params.height, file);
             paramsUpdatePending = true;

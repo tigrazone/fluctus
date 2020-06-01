@@ -25,7 +25,7 @@ public:
 
     void loadEnvMap(const std::string filename);
     void setEnvMap(std::shared_ptr<EnvironmentMap> envMapPtr);
-    void loadModel(const std::string filename, ProgressView *progress); // load .obj or .ply model
+    void loadModel(const std::string filename, ProgressView *progress, bool rootCall = true); // load .obj or .ply model
 
     std::vector<RTTriangle> &getTriangles() { return triangles; }
     std::vector<Material> &getMaterials() { return materials; }
@@ -45,6 +45,7 @@ private:
     void loadPBRTModel(const std::string filename);
     void convertPBRTModel(const std::string filenameIn, const std::string filenameOut);
     void loadPBFModel(const std::string filename);
+    void loadSceneFile(const std::string filename, ProgressView *progress);
 
     // With tiny_obj_loader
     void loadObjWithMaterials(const std::string filename, ProgressView *progress);

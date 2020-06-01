@@ -50,7 +50,7 @@ std::string Scene::hashString()
     return ss.str();
 }
 
-void Scene::loadModel(const std::string filename, ProgressView *progress)
+void Scene::loadModel(const std::string filename, ProgressView *progress, bool rootCall)
 {
     // Starting time for model loading
     auto time1 = std::chrono::high_resolution_clock::now();
@@ -87,19 +87,28 @@ void Scene::loadModel(const std::string filename, ProgressView *progress)
         std::cout << "Loading PBRT binary file: " << converted << std::endl;
         loadPBFModel(converted);
     }
+    else if (endsWith(filename, ".sc.json"))
+    {
+        std::cout << "Loading Scene file: " << filename << std::endl;
+        loadSceneFile(filename, progress);
+    }
     else
     {
         std::cout << "Cannot load file " << filename << ": unknown file format" << std::endl;
         waitExit();
     }
 
-    this->hash = fileHash(filename);
+    // only update hash and metrics when it's not triggered from the scene file load
+    if (rootCall)
+    {
+        this->hash = fileHash(filename);
 
-    // Print elapsed time
-    auto time2 = std::chrono::high_resolution_clock::now();
-    std::cout << "Mesh loaded in: "
-        << std::chrono::duration<double, std::milli>(time2 - time1).count()
-        << " ms" << std::endl;
+        // Print elapsed time
+        auto time2 = std::chrono::high_resolution_clock::now();
+        std::cout << "Mesh loaded in: "
+            << std::chrono::duration<double, std::milli>(time2 - time1).count()
+            << " ms" << std::endl;
+    }
 }
 
 
@@ -865,3 +874,7 @@ void Scene::unpackIndexedData(const std::vector<fr::float3> &positions,
         triangles.push_back(RTTriangle(v0, v1, v2));
     }
 };
+
+void Scene::loadSceneFile(const std::string filename)
+{
+}
