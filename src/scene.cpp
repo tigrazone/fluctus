@@ -9,6 +9,8 @@
 #include "bxdf_types.h"
 
 #include <set>
+#include <json.hpp>
+using json = nlohmann::json;
 
 Scene::Scene()
 {
@@ -50,7 +52,7 @@ std::string Scene::hashString()
     return ss.str();
 }
 
-void Scene::loadModel(const std::string filename, ProgressView *progress, bool rootCall)
+void Scene::loadModel(const std::string filename, ProgressView *progress, ModelTransform* transform)
 {
     // Starting time for model loading
     auto time1 = std::chrono::high_resolution_clock::now();
@@ -58,17 +60,17 @@ void Scene::loadModel(const std::string filename, ProgressView *progress, bool r
     if (endsWith(filename, ".obj"))
     {
         std::cout << "Loading OBJ file: " << filename << std::endl;
-        loadObjWithMaterials(filename, progress);
+        loadObjWithMaterials(filename, progress, transform);
     }
     else if (endsWith(filename, ".ply"))
     {
         std::cout << "Loading PLY file: " << filename << std::endl;
-        loadPlyModel(filename);
+        loadPlyModel(filename, transform);
     }
     else if (endsWith(filename, ".pbf"))
     {
         std::cout << "Loading PBRT binary file: " << filename << std::endl;
-        loadPBFModel(filename);
+        loadPBFModel(filename, transform);
     }
     else if (endsWith(filename, ".pbrt"))
     {
@@ -85,7 +87,7 @@ void Scene::loadModel(const std::string filename, ProgressView *progress, bool r
         infile.close();
         progress->showMessage("Loading PBRT binary file");
         std::cout << "Loading PBRT binary file: " << converted << std::endl;
-        loadPBFModel(converted);
+        loadPBFModel(converted, transform);
     }
     else if (endsWith(filename, ".sc.json"))
     {
@@ -99,7 +101,7 @@ void Scene::loadModel(const std::string filename, ProgressView *progress, bool r
     }
 
     // only update hash and metrics when it's not triggered from the scene file load
-    if (rootCall)
+    if (transform == nullptr)
     {
         this->hash = fileHash(filename);
 
@@ -197,7 +199,7 @@ cl_int Scene::parseShaderType(std::string type)
     return BXDF_DIFFUSE;
 }
 
-void Scene::loadObjWithMaterials(const std::string filePath, ProgressView *progress)
+void Scene::loadObjWithMaterials(const std::string filePath, ProgressView *progress, ModelTransform* transform)
 {
     std::vector<tinyobj::shape_t> shapesVec;
     std::vector<tinyobj::material_t> materialsVec;
@@ -263,9 +265,10 @@ void Scene::loadObjWithMaterials(const std::string filePath, ProgressView *progr
                 auto ind = shape.mesh.indices[3 * f + v];
                 
                 // Position
-                V[v].p = fr::float3(attrib.vertices[3 * ind.vertex_index + 0],
+                fr::float3 pos = fr::float3(attrib.vertices[3 * ind.vertex_index + 0],
                                    attrib.vertices[3 * ind.vertex_index + 1],
                                    attrib.vertices[3 * ind.vertex_index + 2]);
+                V[v].p = transform ? transform->apply(pos) : pos;
 
                 // Normal
                 if (ind.normal_index < 0 || !hasNormals)
@@ -334,7 +337,7 @@ cl_int Scene::tryImportTexture(const std::string path, std::string name)
     return (cl_int)(textures.size() - 1);
 }
 
-void Scene::loadObjModel(const std::string filename)
+void Scene::loadObjModel(const std::string filename, ModelTransform* transform)
 {
     std::vector<fr::float3> positions, normals;
     std::vector<std::array<unsigned, 6>> faces;
@@ -430,11 +433,11 @@ void Scene::loadObjModel(const std::string filename)
         }
     }
 
-    unpackIndexedData(positions, normals, faces, false);
+    unpackIndexedData(positions, normals, faces, false, transform);
 }
 
 /* Used for loading PLY meshes */
-void Scene::loadPlyModel(const std::string filename)
+void Scene::loadPlyModel(const std::string filename, ModelTransform* transform)
 {
     struct Element
     {
@@ -564,7 +567,7 @@ void Scene::loadPlyModel(const std::string filename)
         }
     }
 
-    unpackIndexedData(positions, normals, faces, true); //true = ply format
+    unpackIndexedData(positions, normals, faces, true, transform); //true = ply format
 }
 
 void Scene::loadPBRTModel(const std::string filename)
@@ -586,7 +589,7 @@ void Scene::convertPBRTModel(const std::string filenameIn, const std::string fil
     res->saveTo(filenameOut);
 }
 
-void Scene::loadPBFModel(const std::string filename)
+void Scene::loadPBFModel(const std::string filename, ModelTransform* transform)
 {
     pbrt::Scene::SP scene;
     try
@@ -674,7 +677,8 @@ void Scene::loadPBFModel(const std::string filename)
                         P = xform * P;
                         N = pbrt::math::inverse_transpose(xform.l) * N;
 
-                        V[v].p = toFloat3(P);
+                        fr::float3 pos = toFloat3(P);
+                        V[v].p = transform ? transform->apply(pos) : pos;
                         V[v].n = toFloat3(N);
                         V[v].t = fr::float3(T.x, T.y, 0.0f);
                     }
@@ -830,7 +834,8 @@ void Scene::loadPBFModel(const std::string filename)
 void Scene::unpackIndexedData(const std::vector<fr::float3> &positions,
                               const std::vector<fr::float3>& normals,
                               const std::vector<std::array<unsigned, 6>>& faces,
-                              bool type_ply)
+                              bool type_ply,
+                              ModelTransform* transform)
 {
     std::cout << "Unpacking mesh" << std::endl;
 
@@ -847,9 +852,9 @@ void Scene::unpackIndexedData(const std::vector<fr::float3> &positions,
         // f[2] = index of the position of the second vertex
         // ...
 
-        v0.p = positions[f[0]];
-        v1.p = positions[f[2]];
-        v2.p = positions[f[4]];
+        v0.p = transform ? transform->apply(positions[f[0]]) : positions[f[0]];
+        v1.p = transform ? transform->apply(positions[f[2]]) : positions[f[2]];
+        v2.p = transform ? transform->apply(positions[f[4]]) : positions[f[4]];
 
         if (normals.size() == 0)
         {
@@ -875,6 +880,39 @@ void Scene::unpackIndexedData(const std::vector<fr::float3> &positions,
     }
 };
 
-void Scene::loadSceneFile(const std::string filename)
+inline bool contains(json j, std::string value)
 {
+    return j.find(value) != j.end();
+}
+
+void Scene::loadSceneFile(const std::string filename, ProgressView *progress)
+{
+    size_t fileNameStart = filename.find_last_of("\\"); // assume Windows
+    if (fileNameStart == std::string::npos) fileNameStart = filename.find_last_of("/"); // Linux/MacOS
+    std::string folderPath = filename.substr(0, fileNameStart + 1);
+
+    std::ifstream sceneStream(filename);
+    if (!sceneStream)
+    {
+        std::cout << "Could not open file: " << filename << ", exiting..." << std::endl;
+        waitExit();
+    }
+    json sceneList;
+    sceneStream >> sceneList;
+
+    for(json sceneInfo : sceneList)
+    {
+        const std::string sceneFile = sceneInfo["file"].get<std::string>();
+        progress->showMessage("Loading Model " + sceneFile);
+        ModelTransform transform;
+        if (contains(sceneInfo, "scale"))
+        {
+            transform.scale = sceneInfo["scale"].get<float>();
+        }
+        if (contains(sceneInfo, "translation"))
+        {
+            transform.translation = fr::float3(sceneInfo["translation"]["x"].get<float>(), sceneInfo["translation"]["y"].get<float>(), sceneInfo["translation"]["z"].get<float>());
+        }
+        loadModel(folderPath + sceneFile, progress, &transform);
+    }
 }
