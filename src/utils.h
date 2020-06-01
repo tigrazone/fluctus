@@ -64,6 +64,7 @@ std::string getAbsolutePath(std::string filename);
 std::string getFileName(const std::string path);
 
 bool endsWith(const std::string s, const std::string end);
+bool endsWithAny(const std::string s, const std::vector<std::string> ends);
 std::string unixifyPath(std::string path);
 
 std::string openFileDialog(const std::string message, const std::string defaultPath, const std::vector<const char*> filter);

@@ -102,7 +102,7 @@ void Settings::import(json j)
     if (contains(j, "maxPathDepth")) this->maxPathDepth = j["maxPathDepth"].get<int>();
     if (contains(j, "tonemap")) this->tonemap = j["tonemap"].get<int>();
 
-    // Map of numbers 1-5 to scenes (shortcuts)
+    // Map of numbers 1-6 to scenes (shortcuts)
     if (contains(j, "shortcuts"))
     {
         json map = j["shortcuts"];

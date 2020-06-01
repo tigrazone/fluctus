@@ -26,6 +26,18 @@ bool endsWith(const std::string s, const std::string end)
     return end == substr;
 }
 
+bool endsWithAny(const std::string s, const std::vector<std::string> ends)
+{
+    for(const std::string end : ends)
+    {
+        if (endsWith(s, end))
+        {
+            return true;
+        }
+    }
+    return false;
+}
+
 std::string unixifyPath(std::string path)
 {
     size_t index = 0;

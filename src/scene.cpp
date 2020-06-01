@@ -55,22 +55,22 @@ void Scene::loadModel(const std::string filename, ProgressView *progress)
     // Starting time for model loading
     auto time1 = std::chrono::high_resolution_clock::now();
 
-    if (endsWith(filename, "obj"))
+    if (endsWith(filename, ".obj"))
     {
         std::cout << "Loading OBJ file: " << filename << std::endl;
         loadObjWithMaterials(filename, progress);
     }
-    else if (endsWith(filename, "ply"))
+    else if (endsWith(filename, ".ply"))
     {
         std::cout << "Loading PLY file: " << filename << std::endl;
         loadPlyModel(filename);
     }
-    else if (endsWith(filename, "pbf"))
+    else if (endsWith(filename, ".pbf"))
     {
         std::cout << "Loading PBRT binary file: " << filename << std::endl;
         loadPBFModel(filename);
     }
-    else if (endsWith(filename, "pbrt"))
+    else if (endsWith(filename, ".pbrt"))
     {
         const std::string converted = filename.substr(0, filename.length() - 4) + "pbf";
 
