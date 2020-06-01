@@ -294,7 +294,8 @@ void Scene::loadObjWithMaterials(const std::string filePath, ProgressView *progr
                 V[0].n = V[1].n = V[2].n = normalize(cross(V[1].p - V[0].p, V[2].p - V[0].p));
 
             RTTriangle tri(V[0], V[1], V[2]);
-            tri.matId = shape.mesh.material_ids[f] + 1; // -1 becomes 0 (default material)
+            int matId = shape.mesh.material_ids[f];
+            tri.matId = matId == -1 ? 0 : matId + materials.size(); // -1 becomes 0 (default material)
             triangles.push_back(tri);
         }
     }
@@ -626,12 +627,12 @@ void Scene::loadPBFModel(const std::string filename, ModelTransform* transform)
                 auto prev = std::find(pbrtMaterials.begin(), pbrtMaterials.end(), shape->material);
                 if (prev != pbrtMaterials.end())
                 {
-                    matId = (prev - pbrtMaterials.begin()) + 1;
+                    matId = prev - pbrtMaterials.begin();
                 }
                 else
                 {
-                    pbrtMaterials.push_back(shape->material);
                     matId = pbrtMaterials.size();
+                    pbrtMaterials.push_back(shape->material);
                 }
             }
 
@@ -689,7 +690,7 @@ void Scene::loadPBFModel(const std::string filename, ModelTransform* transform)
                     // Apply transform
 
                     RTTriangle tri(V[0], V[1], V[2]);
-                    tri.matId = matId;
+                    tri.matId = matId + materials.size();
                     triangles.push_back(tri);
                 }
                 
