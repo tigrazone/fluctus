@@ -178,6 +178,7 @@ typedef struct
     cl_uint sampleExpl;    // use next event estimation
     cl_uint useRoulette;   // Luminance-based russian roulette
     cl_uint wfSeparateQueues;
+    cl_uint maxSpp;
     cl_float worldRadius;
 } RenderParams;
 

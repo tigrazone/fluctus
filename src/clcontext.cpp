@@ -339,6 +339,7 @@ void CLContext::setupPixelStorage(PTWindow *window)
     deviceBuffers.previewBuffer = cl::BufferGL(context, CL_MEM_READ_WRITE, window->getPBO(), &err); // GL preview buffer
     deviceBuffers.denoiserAlbedoBufferGL = cl::BufferGL(context, CL_MEM_READ_WRITE, window->getAlbedoPBO(), &err);
     deviceBuffers.denoiserNormalBufferGL = cl::BufferGL(context, CL_MEM_READ_WRITE, window->getNormalPBO(), &err);
+    deviceBuffers.samplesPerPixel = cl::Buffer(context, CL_MEM_READ_WRITE, numPixels * sizeof(cl_uint), NULL, &err);
     sharedMemory = { deviceBuffers.previewBuffer, deviceBuffers.denoiserAlbedoBufferGL, deviceBuffers.denoiserNormalBufferGL };
     verify("CL pixel storage creation failed!");
 
@@ -363,12 +364,14 @@ void CLContext::setupPixelStorage(PTWindow *window)
         err |= wf_logic->setArg("pixels", deviceBuffers.pixelBuffer);
         err |= wf_logic->setArg("denoiserNormal", deviceBuffers.denoiserNormalBuffer);
         err |= wf_logic->setArg("denoiserAlbedo", deviceBuffers.denoiserAlbedoBuffer);
+        err |= wf_logic->setArg("samplesPerPixel", deviceBuffers.samplesPerPixel);
     }
     if (wf_reset)
     {
         err |= wf_reset->setArg("pixels", deviceBuffers.pixelBuffer);
         err |= wf_reset->setArg("denoiserAlbedo", deviceBuffers.denoiserAlbedoBuffer);
         err |= wf_reset->setArg("denoiserNormal", deviceBuffers.denoiserNormalBuffer);
+        err |= wf_logic->setArg("samplesPerPixel", deviceBuffers.samplesPerPixel);
     }
     if (mk_postprocess)
     {

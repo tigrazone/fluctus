@@ -36,6 +36,7 @@ kernel void logic(
     global uchar *texData,
     global TexDescriptor *textures,
     global RenderParams *params,
+    global uint* samplesPerPixel,
     uint numTasks,
     uint firstIteration
 )
@@ -66,6 +67,14 @@ kernel void logic(
         terminate = (rand(&seed) > contProb);
         T /= contProb;
         WriteFloat3(T, tasks, T);
+    }
+
+    uint pixIdx = ReadU32(pixelIndex, tasks);
+    bool maxSamplesReached = false;
+    if (samplesPerPixel[pixIdx] >= params->maxSpp)
+    {
+        terminate = true;
+        maxSamplesReached = true;
     }
 
     // Terminate if throughput is zero
@@ -157,16 +166,26 @@ kernel void logic(
 
     // Image accumulation
     uint terminateMask = 0;
+    uint samplesMask = 0;
 #ifdef NVIDIA
     terminateMask = ballot_sync(terminate, activemask());
+    samplesMask = ballot_sync(!maxSamplesReached, activemask());
 #endif
     if (terminate)
     {
-        if (len > 0)
+        if (!maxSamplesReached)
         {
-            uint pixIdx = ReadU32(pixelIndex, tasks);
-            float4 color = (float4)(ReadFloat3(Ei, tasks), 1.0f);
-            add_float4(pixels + pixIdx * 4, color);
+            atomicIncMasked(samplesPerPixel + pixIdx, samplesMask);
+            if (len > 0)
+            {
+                float4 color = (float4)(ReadFloat3(Ei, tasks), 1.0f);
+                add_float4(pixels + pixIdx * 4, color);
+            }
+        }
+
+        if(pixIdx % (1280 * 180) == 0)
+        {
+            printf("Samples: %d/%d\n", samplesPerPixel[pixIdx], params->maxSpp);
         }
 
         uint idx = atomicIncMasked(&queueLens->raygenQueue, terminateMask);
@@ -202,7 +221,6 @@ kernel void logic(
     if (isDiffuse && !(*diffuseHit))
     {
         *diffuseHit = 1;
-        uint pixIdx = ReadU32(pixelIndex, tasks);
         float3 albedo = matGetFloat3(mat.Kd, hit.uvTex, mat.map_Kd, textures, texData); // not gamma-corrected
         add_float4(denoiserAlbedo + pixIdx * 4, (float4)(albedo, 1.0f));
     }

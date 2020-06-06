@@ -42,6 +42,7 @@ public:
         err |= setArg("texData",        ctx->deviceBuffers.texDataBuffer);
         err |= setArg("textures",       ctx->deviceBuffers.texDescriptorBuffer);
         err |= setArg("params",         ctx->deviceBuffers.renderParams);
+        err |= setArg("samplesPerPixel",ctx->deviceBuffers.samplesPerPixel);
         err |= setArg("numTasks",       ctx->getNumTasks());
         err |= setArg("firstIteration", (cl_uint)false);
         clt::check(err, "Failed to set wf_logic arguments");
@@ -273,6 +274,7 @@ public:
         err |= setArg("queueLens", ctx->deviceBuffers.queueCounters);
         err |= setArg("raygenQueue", ctx->deviceBuffers.raygenQueue);
         err |= setArg("params", ctx->deviceBuffers.renderParams);
+        err |= setArg("samplesPerPixel", ctx->deviceBuffers.samplesPerPixel);
         err |= setArg("numTasks", ctx->getNumTasks());
         clt::check(err, "Failed to set wf_reset arguments!");
     }

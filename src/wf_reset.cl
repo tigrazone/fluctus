@@ -10,6 +10,7 @@ kernel void reset(
     global QueueCounters* queueLens,
     global uint* raygenQueue,
     global RenderParams* params,
+    global uint* samplesPerPixel,
     uint numTasks
 )
 {
@@ -22,6 +23,7 @@ kernel void reset(
         vstore4((float4)(0.0f), gid, denoiserNormal);
         // default value for direct emission (not updated in logic kernel)
         vstore4((float4)(0.1f, 0.1f, 0.1f, 0.0f), gid, denoiserAlbedo);
+        vstore(0, gid, samplesPerPixel);
     }
     
     // Clear path data

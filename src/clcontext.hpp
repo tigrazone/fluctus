@@ -177,6 +177,7 @@ public:
         cl::Buffer deltaMatQueue;
         cl::Buffer currentPixelIdx; // points to next pixel, since NUM_TASKS != #pixels
         cl::Buffer queueCounters;   // atomic counters keeping track of queue lengths
+        cl::Buffer samplesPerPixel;
 
         // Variables from BVH
         cl::Buffer triangleBuffer;
