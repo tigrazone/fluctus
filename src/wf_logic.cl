@@ -69,6 +69,7 @@ kernel void logic(
         WriteFloat3(T, tasks, T);
     }
 
+#ifdef CHECK_SPP
     uint pixIdx = ReadU32(pixelIndex, tasks);
     bool maxSamplesReached = false;
     if (samplesPerPixel[pixIdx] >= params->maxSpp)
@@ -76,6 +77,7 @@ kernel void logic(
         terminate = true;
         maxSamplesReached = true;
     }
+#endif
 
     // Terminate if throughput is zero
     if (isZero(T) || ReadF32(lastPdfW, tasks) == 0.0f)
@@ -171,6 +173,7 @@ kernel void logic(
 #endif
     if (terminate)
     {
+#ifdef CHECK_SPP
         // need a second check for spp here
         // probably could drop the first due to thread divergence
         if (!maxSamplesReached && atomic_inc(&(samplesPerPixel[pixIdx])) <= params->maxSpp && len > 0)
@@ -182,6 +185,14 @@ kernel void logic(
         {
             samplesPerPixel[pixIdx] = params->maxSpp;
         }
+#else
+        if (len > 0)
+        {
+            uint pixIdx = ReadU32(pixelIndex, tasks);
+            float4 color = (float4)(ReadFloat3(Ei, tasks), 1.0f);
+            add_float4(pixels + pixIdx * 4, color);
+        }
+#endif
 
         uint idx = atomicIncMasked(&queueLens->raygenQueue, terminateMask);
         raygenQueue[idx] = gid;
@@ -216,6 +227,7 @@ kernel void logic(
     if (isDiffuse && !(*diffuseHit))
     {
         *diffuseHit = 1;
+        uint pixIdx = ReadU32(pixelIndex, tasks);
         float3 albedo = matGetFloat3(mat.Kd, hit.uvTex, mat.map_Kd, textures, texData); // not gamma-corrected
         add_float4(denoiserAlbedo + pixIdx * 4, (float4)(albedo, 1.0f));
     }

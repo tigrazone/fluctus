@@ -57,6 +57,7 @@ public:
         if (params.sampleExpl) opts.append(" -DSAMPLE_EXPLICIT");
         if (params.sampleImpl) opts.append(" -DSAMPLE_IMPLICIT");
         if (!params.wfSeparateQueues) opts.append(" -DWF_SINGLE_MAT_QUEUE");
+        if (params.maxSpp > 0) opts.append(" -DCHECK_SPP");
         return opts;
     }
 };

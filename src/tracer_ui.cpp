@@ -215,6 +215,26 @@ void Tracer::addRendererSettings(Widget *parent)
     });
     auto depthDesc = new Label(depthPanel, "Maximum path depth");
 
+    // Max Samples Per Pixel
+    Widget *sppPanel = new Widget(rendererPopup);
+    sppPanel->setLayout(new BoxLayout(Orientation::Horizontal, Alignment::Middle, 0, 5));
+    IntBox<int> *sppBox = new IntBox<int>(sppPanel);
+    uiMapping["MAX_SPP_BOX"] = sppBox;
+    sppBox->setFixedWidth(48);
+    sppBox->setAlignment(TextBox::Alignment::Right);
+    sppBox->setValue(std::min(1000, int(params.maxSpp)));
+    sppBox->setEditable(true);
+    inputBoxes.push_back(sppBox);
+    sppBox->setFormat("[0-9]+");
+    sppBox->setSpinnable(true);
+    sppBox->setMinMaxValues(0, 1000);
+    sppBox->setValueIncrement(1);
+    sppBox->setCallback([&](int value) {
+        params.maxSpp = cl_uint(value);
+        paramsUpdatePending = true;
+    });
+    auto sppDesc = new Label(sppPanel, "Maximum Samples Per Pixel");
+
     // Render scale
     new Label(rendererPopup, "Render scale", "sans-bold");
     Widget *renderScalePanel = new Widget(rendererPopup);
@@ -510,6 +530,9 @@ void Tracer::updateGUI()
     
     auto maxBouncesBox = static_cast<IntBox<int>*>(uiMapping["MAX_BOUNCES_BOX"]);
     maxBouncesBox->setValue(params.maxBounces);
+
+    auto maxSppBox = static_cast<IntBox<int>*>(uiMapping["MAX_SPP_BOX"]);
+    maxSppBox->setValue(params.maxSpp);
 
     auto camSpeedSlider = static_cast<Slider*>(uiMapping["CAM_SPEED_SLIDER"]);
     auto camSpeedBox = static_cast<FloatBox<float>*>(uiMapping["CAM_SPEED_BOX"]);

@@ -52,7 +52,7 @@ void Tracer::resetParams(int width, int height)
     params.sampleExpl = cl_uint(true);
     params.useRoulette = cl_uint(s.getUseRussianRoulette());
     params.wfSeparateQueues = cl_uint(s.getUseSeparateQueues());
-    params.maxSpp = 16;
+    params.maxSpp = cl_uint(s.getMaxSpp());
 }
 
 // Run whenever a scene is loaded

@@ -55,6 +55,7 @@ public:
     bool getUseRussianRoulette() { return useRussianRoulette; }
     bool getUseSeparateQueues() { return useSeparateQueues; }
     int getMaxPathDepth() { return maxPathDepth; }
+    unsigned int getMaxSpp() { return maxSpp; }
     int getTonemap() { return tonemap; }
     CameraSettings getCameraSettings() { return cameraSettings; }
     AreaLightSettings getAreaLightSettings() { return areaLightSettings; }
@@ -83,6 +84,7 @@ private:
     bool useRussianRoulette;
     bool useSeparateQueues;
     int maxPathDepth;
+    unsigned int maxSpp;
     int tonemap;
     CameraSettings cameraSettings;
     AreaLightSettings areaLightSettings;

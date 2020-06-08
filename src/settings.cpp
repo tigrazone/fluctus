@@ -30,6 +30,7 @@ void Settings::init()
     useRussianRoulette = false;
     useSeparateQueues = false;
     maxPathDepth = 10;
+    maxSpp = 0; // 0 = no limit
     tonemap = 2; // UC2 default
     cameraSettings = {
         vfloat3(0.0f, 1.0f, 3.5f),
@@ -100,6 +101,7 @@ void Settings::import(json j)
     if (contains(j, "useRussianRoulette")) this->useRussianRoulette = j["useRussianRoulette"].get<bool>();
     if (contains(j, "useSeparateQueues")) this->useSeparateQueues = j["useSeparateQueues"].get<bool>();
     if (contains(j, "maxPathDepth")) this->maxPathDepth = j["maxPathDepth"].get<int>();
+    if (contains(j, "maxSpp")) this->maxSpp = j["maxSpp"].get<unsigned int>();
     if (contains(j, "tonemap")) this->tonemap = j["tonemap"].get<int>();
 
     // Map of numbers 1-6 to scenes (shortcuts)
