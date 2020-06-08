@@ -371,7 +371,7 @@ void CLContext::setupPixelStorage(PTWindow *window)
         err |= wf_reset->setArg("pixels", deviceBuffers.pixelBuffer);
         err |= wf_reset->setArg("denoiserAlbedo", deviceBuffers.denoiserAlbedoBuffer);
         err |= wf_reset->setArg("denoiserNormal", deviceBuffers.denoiserNormalBuffer);
-        err |= wf_logic->setArg("samplesPerPixel", deviceBuffers.samplesPerPixel);
+        err |= wf_reset->setArg("samplesPerPixel", deviceBuffers.samplesPerPixel);
     }
     if (mk_postprocess)
     {
