@@ -346,7 +346,10 @@ void CLContext::setupPixelStorage(PTWindow *window)
     // Set new kernel args (pointers might have changed)
     err = 0;
     if (mk_splat)
+    {
         err |= mk_splat->setArg("pixels", deviceBuffers.pixelBuffer);
+        err |= mk_splat->setArg("samplesPerPixel", deviceBuffers.samplesPerPixel);
+    }
     if (mk_splat_preview)
         err |= mk_splat_preview->setArg("pixels", deviceBuffers.pixelBuffer);
     if (mk_next_vertex)
@@ -358,6 +361,7 @@ void CLContext::setupPixelStorage(PTWindow *window)
         err |= mk_reset->setArg("pixels", deviceBuffers.pixelBuffer);
         err |= mk_reset->setArg("denoiserAlbedo", deviceBuffers.denoiserAlbedoBuffer);
         err |= mk_reset->setArg("denoiserNormal", deviceBuffers.denoiserNormalBuffer);
+        err |= mk_reset->setArg("samplesPerPixel", deviceBuffers.samplesPerPixel);
     }
     if (wf_logic)
     {

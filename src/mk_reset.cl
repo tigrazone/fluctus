@@ -7,6 +7,7 @@ kernel void reset(
     global float* denoiserAlbedo,
     global float* denoiserNormal,
     global RenderParams *params,
+    global uint* samplesPerPixel,
     uint numTasks
 )
 {
@@ -23,6 +24,7 @@ kernel void reset(
 	vstore4((float4)(0.0f), gid, pixels);
     vstore4((float4)(0.0f), gid, denoiserNormal);
     vstore4((float4)(0.1f, 0.1f, 0.1f, 0.0f), gid, denoiserAlbedo);
+	vstore(0, gid, samplesPerPixel);
 
 	// Reset path phase
 	global PathPhase *phase = (global PathPhase*)&ReadI32(phase, tasks);

@@ -293,6 +293,7 @@ public:
         err |= setArg("denoiserAlbedo", ctx->deviceBuffers.denoiserAlbedoBuffer);
         err |= setArg("denoiserNormal", ctx->deviceBuffers.denoiserNormalBuffer);
         err |= setArg("params", ctx->deviceBuffers.renderParams);
+        err |= setArg("samplesPerPixel", ctx->deviceBuffers.samplesPerPixel);
         err |= setArg("numTasks", ctx->getNumTasks());
         clt::check(err, "Failed to set mk_reset arguments!");
     }
@@ -393,9 +394,17 @@ public:
         err |= setArg("tasks", ctx->deviceBuffers.tasksBuffer);
         err |= setArg("pixels", ctx->deviceBuffers.pixelBuffer);
         err |= setArg("params", ctx->deviceBuffers.renderParams);
+        err |= setArg("samplesPerPixel", ctx->deviceBuffers.samplesPerPixel);
         err |= setArg("stats", ctx->deviceBuffers.renderStats);
         err |= setArg("numTasks", ctx->getNumTasks());
         clt::check(err, "Failed to set mk_splat arguments!");
+    }
+    std::string getAdditionalBuildOptions() override {
+        Tracer* tracer = static_cast<Tracer*>(userPtr);
+        const RenderParams& params = tracer->getParams();
+        std::string opts;
+        if (params.maxSpp > 0) opts.append(" -DCHECK_SPP");
+        return opts;
     }
 };
 
