@@ -89,6 +89,7 @@ void CLContext::setupKernels()
     setupWfGGXReflKernel();
     setupWfGGXRefrKernel();
     setupWfDeltaKernel();
+    setupWfEmissiveKernel();
     setupWfAllMaterialsKernel();
 
     // Other
@@ -134,6 +135,7 @@ void CLContext::initMCBuffers()
     deviceBuffers.ggxReflMatQueue = cl::Buffer(context, CL_MEM_READ_WRITE, NUM_TASKS * sizeof(cl_uint), NULL, &err);
     deviceBuffers.ggxRefrMatQueue = cl::Buffer(context, CL_MEM_READ_WRITE, NUM_TASKS * sizeof(cl_uint), NULL, &err);
     deviceBuffers.deltaMatQueue = cl::Buffer(context, CL_MEM_READ_WRITE, NUM_TASKS * sizeof(cl_uint), NULL, &err);
+    deviceBuffers.emissiveMatQueue = cl::Buffer(context, CL_MEM_READ_WRITE, NUM_TASKS * sizeof(cl_uint), NULL, &err);
     verify("MK queue creation failed");
 
     const size_t memoryUsageMiB = t_bytes / (2 << 19);
@@ -240,6 +242,15 @@ void CLContext::setupWfDeltaKernel()
 
     window->showMessage("Building kernel", "wf_mat_delta");
     wf_delta->build(context, device, platform);
+}
+
+void CLContext::setupWfEmissiveKernel()
+{
+    if (!wf_emissive)
+        wf_emissive = new WFEmissiveKernel();
+
+    window->showMessage("Building kernel", "wf_emissive");
+    wf_emissive->build(context, device, platform);
 }
 
 void CLContext::setupWfAllMaterialsKernel()
@@ -811,6 +822,7 @@ void CLContext::enqueueWfMaterialKernels(const RenderParams & params)
         enqueueWfGGXReflKernel(params);
         enqueueWfGGXRefrKernel(params);
         enqueueWfDeltaKernel(params);
+        enqueueWfEmissiveKernel(params);
     }
     else
     {
@@ -848,6 +860,12 @@ void CLContext::enqueueWfDeltaKernel(const RenderParams & params)
     verify("Failed to enqueue wf_delta");
 }
 
+void CLContext::enqueueWfEmissiveKernel(const RenderParams& params)
+{
+    err = cmdQueue.enqueueNDRangeKernel(*wf_emissive, cl::NullRange, cl::NDRange(NUM_TASKS), cl::NullRange);
+    verify("Failed to enqueue wf_emissive");
+}
+
 void CLContext::enqueueWfAllMaterialsKernel(const RenderParams & params)
 {
     err = cmdQueue.enqueueNDRangeKernel(*wf_mat_all, cl::NullRange, cl::NDRange(NUM_TASKS), cl::NullRange);
@@ -871,6 +889,7 @@ void CLContext::recompileKernels(bool setArgs)
     wf_ggx_refl->rebuild(setArgs);
     wf_ggx_refr->rebuild(setArgs);
     wf_delta->rebuild(setArgs);
+    wf_emissive->rebuild(setArgs);
 
     mk_reset->rebuild(setArgs);
     mk_raygen->rebuild(setArgs);

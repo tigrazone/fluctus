@@ -31,6 +31,7 @@ public:
         err |= setArg("ggxReflQueue",   ctx->deviceBuffers.ggxReflMatQueue);
         err |= setArg("ggxRefrQueue",   ctx->deviceBuffers.ggxRefrMatQueue);
         err |= setArg("deltaQueue",     ctx->deviceBuffers.deltaMatQueue);
+        err |= setArg("emissiveQueue",  ctx->deviceBuffers.emissiveMatQueue);
         err |= setArg("tris",           ctx->deviceBuffers.triangleBuffer);
         err |= setArg("nodes",          ctx->deviceBuffers.nodeBuffer);
         err |= setArg("indices",        ctx->deviceBuffers.indexBuffer);
@@ -231,6 +232,26 @@ public:
         err |= setArg("params", ctx->deviceBuffers.renderParams);
         err |= setArg("numTasks", ctx->getNumTasks());
         clt::check(err, "Failed to set wf_delta arguments!");
+    }
+};
+
+class WFEmissiveKernel : public clt::Kernel
+{
+public:
+    WFEmissiveKernel(void) : Kernel("src/wf_mat_emissive.cl", "wavefrontEmissive") {}
+    void setArgs() override {
+        CLContext *ctx = getCtxPtr(userPtr);
+        int err = 0;
+        err |= setArg("tasks", ctx->deviceBuffers.tasksBuffer);
+        err |= setArg("queueLens", ctx->deviceBuffers.queueCounters);
+        err |= setArg("materialQueue", ctx->deviceBuffers.emissiveMatQueue);
+        err |= setArg("extensionQueue", ctx->deviceBuffers.extensionQueue);
+        err |= setArg("materials", ctx->deviceBuffers.materialBuffer);
+        err |= setArg("texData", ctx->deviceBuffers.texDataBuffer);
+        err |= setArg("textures", ctx->deviceBuffers.texDescriptorBuffer);
+        err |= setArg("params", ctx->deviceBuffers.renderParams);
+        err |= setArg("numTasks", ctx->getNumTasks());
+        clt::check(err, "Failed to set wf_emissive arguments!");
     }
 };
 

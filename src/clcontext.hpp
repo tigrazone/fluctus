@@ -86,6 +86,7 @@ private:
     void enqueueWfGGXReflKernel(const RenderParams &params);
     void enqueueWfGGXRefrKernel(const RenderParams &params);
     void enqueueWfDeltaKernel(const RenderParams &params);
+    void enqueueWfEmissiveKernel(const RenderParams &params);
     void enqueueWfAllMaterialsKernel(const RenderParams &params);
     
     void setupKernels();
@@ -107,6 +108,7 @@ private:
     void setupWfGGXReflKernel();
     void setupWfGGXRefrKernel();
     void setupWfDeltaKernel();
+    void setupWfEmissiveKernel();
     void setupWfAllMaterialsKernel();
     void initMCBuffers();
 
@@ -146,6 +148,7 @@ private:
     clt::Kernel* wf_ggx_refl = nullptr;
     clt::Kernel* wf_ggx_refr = nullptr;
     clt::Kernel* wf_delta = nullptr;
+    clt::Kernel* wf_emissive = nullptr;
     clt::Kernel* wf_mat_all = nullptr;
 
     
@@ -175,6 +178,7 @@ public:
         cl::Buffer ggxReflMatQueue;
         cl::Buffer ggxRefrMatQueue;
         cl::Buffer deltaMatQueue;
+        cl::Buffer emissiveMatQueue;
         cl::Buffer currentPixelIdx; // points to next pixel, since NUM_TASKS != #pixels
         cl::Buffer queueCounters;   // atomic counters keeping track of queue lengths
         cl::Buffer samplesPerPixel;

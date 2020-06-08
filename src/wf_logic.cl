@@ -4,11 +4,11 @@
 #include "env_map.cl"
 
 void addToMaterialQueueLocalAtomics(const uint, const Material, global QueueCounters*,
-    global uint*, global uint*, global uint*, global uint*, global uint*);
+    global uint*, global uint*, global uint*, global uint*, global uint*, global uint*);
 void addToMaterialQueueNaive(const uint, const Material, global QueueCounters*,
-    global uint*, global uint*, global uint*, global uint*, global uint*);
+    global uint*, global uint*, global uint*, global uint*, global uint*, global uint*);
 void addToMaterialQueueWarpNVIDIA(const uint, const Material, global QueueCounters*,
-    global uint*, global uint*, global uint*, global uint*, global uint*);
+    global uint*, global uint*, global uint*, global uint*, global uint*, global uint*);
 
 // Logic kernel
 kernel void logic(
@@ -25,6 +25,7 @@ kernel void logic(
     global uint *ggxReflQueue,
     global uint *ggxRefrQueue,
     global uint *deltaQueue,
+    global uint *emissiveQueue,
     global Triangle *tris,
     global GPUNode *nodes,
     global uint *indices,
@@ -331,10 +332,10 @@ kernel void logic(
     WriteU32(seed, tasks, seed);
 
 #ifdef NVIDIA
-    addToMaterialQueueLocalAtomics(gid, mat, queueLens, diffuseQueue, glossyQueue, ggxReflQueue, ggxRefrQueue, deltaQueue);
-    //addToMaterialQueueWarpNVIDIA(gid, mat, queueLens, diffuseQueue, glossyQueue, ggxReflQueue, ggxRefrQueue, deltaQueue);
+    addToMaterialQueueLocalAtomics(gid, mat, queueLens, diffuseQueue, glossyQueue, ggxReflQueue, ggxRefrQueue, deltaQueue, emissiveQueue);
+    //addToMaterialQueueWarpNVIDIA(gid, mat, queueLens, diffuseQueue, glossyQueue, ggxReflQueue, ggxRefrQueue, deltaQueue, emissiveQueue);
 #else
-    addToMaterialQueueNaive(gid, mat, queueLens, diffuseQueue, glossyQueue, ggxReflQueue, ggxRefrQueue, deltaQueue);
+    addToMaterialQueueNaive(gid, mat, queueLens, diffuseQueue, glossyQueue, ggxReflQueue, ggxRefrQueue, deltaQueue, emissiveQueue);
 #endif
     
 }
@@ -353,7 +354,8 @@ inline void addToMaterialQueueNaive(
     global uint* glossyQueue,
     global uint* ggxReflQueue,
     global uint* ggxRefrQueue,
-    global uint* deltaQueue
+    global uint* deltaQueue,
+    global uint* emissiveQueue
 )
 {
     global uint *queue;
@@ -387,6 +389,10 @@ inline void addToMaterialQueueNaive(
             queue = deltaQueue;
             queueLen = &queueLens->deltaQueue;
             break;
+        case BXDF_EMISSIVE:
+            queue = emissiveQueue;
+            queueLen = &queueLens->emissiveQueue;
+            break;
         default:
             printf("WF_LOGIC: INCORRECT MATERIAL TYPE!\n");
             return;
@@ -407,11 +413,12 @@ kernel void addToMaterialQueueLocalAtomics(
     global uint* glossyQueue,
     global uint* ggxReflQueue,
     global uint* ggxRefrQueue,
-    global uint* deltaQueue
+    global uint* deltaQueue,
+    global uint* emissiveQueue
 )
 {
-    local uint nDiffuse, nGlossy, nGGXRefl, nGGXRefr, nDelta;
-    nDiffuse = nGlossy = nGGXRefl = nGGXRefr = nDelta = 0;
+    local uint nDiffuse, nGlossy, nGGXRefl, nGGXRefr, nDelta, nEmissive;
+    nDiffuse = nGlossy = nGGXRefl = nGGXRefr = nDelta = nEmissive = 0;
 
     barrier(CLK_LOCAL_MEM_FENCE);
 
@@ -452,6 +459,11 @@ kernel void addToMaterialQueueLocalAtomics(
             queueLenGlobal = &queueLens->deltaQueue;
             queueLenLocal = &nDelta;
             break;
+        case BXDF_EMISSIVE:
+            queue = emissiveQueue;
+            queueLenGlobal = &queueLens->emissiveQueue;
+            queueLenLocal = &nEmissive;
+            break;
         default:
             printf("WF_LOGIC: INCORRECT MATERIAL TYPE: %d (gid %u)!\n", mat.type, gid);
             return;
@@ -488,7 +500,8 @@ inline void addToMaterialQueueWarpNVIDIA(
     global uint* glossyQueue,
     global uint* ggxReflQueue,
     global uint* ggxRefrQueue,
-    global uint* deltaQueue
+    global uint* deltaQueue,
+    global uint* emissiveQueue
 )
 {
     const uint mask_active = activemask();
@@ -537,6 +550,13 @@ inline void addToMaterialQueueWarpNVIDIA(
     {
         idx = atomicAggInc(&queueLens->deltaQueue, matMask);
         deltaQueue[idx] = gid;
+    }
+
+    matMask = ballot_sync(mat.type & BXDF_EMISSIVE, mask_active);
+    if (matMask & thmask)
+    {
+        idx = atomicAggInc(&queueLens->emissiveQueue, matMask);
+        emissiveQueue[idx] = gid;
     }
 
 #endif
