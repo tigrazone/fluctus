@@ -205,12 +205,12 @@ void Tracer::addRendererSettings(Widget *parent)
     depthBox->setValue(std::min(99, int(params.maxBounces)));
     depthBox->setEditable(true);
     inputBoxes.push_back(depthBox);
-    depthBox->setFormat("-?[0-9]+");
+    depthBox->setFormat("[0-9]+");
     depthBox->setSpinnable(true);
-    depthBox->setMinMaxValues(-1, 99);
+    depthBox->setMinMaxValues(0, 99);
     depthBox->setValueIncrement(1);
     depthBox->setCallback([&](int value) {
-        params.maxBounces = cl_int(value);
+        params.maxBounces = cl_uint(value);
         paramsUpdatePending = true;
     });
     auto depthDesc = new Label(depthPanel, "Maximum path depth");

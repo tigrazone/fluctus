@@ -157,8 +157,9 @@ kernel void sampleBsdf(
 	// Check path termination (Russian roulette)
 	float contProb = 1.0f;
 	uint len = ReadU32(pathLen, tasks);
-	bool terminate = (len - 1 >= params->maxBounces); // bounces = path_length - 1
-	if (terminate && params->useRoulette)
+    bool terminate = params->maxBounces > 0 && (len >= params->maxBounces + 1); // bounces = path_length - 1
+    // MIN_PATH_LENGTH at which we start using Russian Roulette
+    if (!terminate && params->useRoulette && len > MIN_PATH_LENGTH)
     {
 		contProb = clamp(luminance(ReadFloat3(T, tasks)), 0.01f, 0.5f);
 		terminate = (rand(&seed) > contProb);

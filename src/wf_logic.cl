@@ -60,8 +60,7 @@ kernel void logic(
 
     // Russian roulette
     float contProb = 1.0f;
-    // maxBounces = -1 --> no maxBounces
-    bool terminate = params->maxBounces >= 0 && (len >= params->maxBounces + 1); // bounces = path_length - 1
+    bool terminate = params->maxBounces > 0 && (len >= params->maxBounces + 1); // bounces = path_length - 1
     // MIN_PATH_LENGTH at which we start using Russian Roulette
     if (!terminate && params->useRoulette && len > MIN_PATH_LENGTH)
     {
@@ -190,6 +189,7 @@ kernel void logic(
             samplesPerPixel[pixIdx] = params->maxSpp;
         }
 #else
+        // always true ?!?
         if (len > 0)
         {
             uint pixIdx = ReadU32(pixelIndex, tasks);

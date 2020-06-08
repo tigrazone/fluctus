@@ -236,13 +236,13 @@ void Tracer::update()
     if (useWavefront)
     {
         // Aila-style WF
-        cl_int maxBounces = params.maxBounces;
+        cl_uint maxBounces = params.maxBounces;
         int N = 1;
         
         if (iteration == 0)
         {
             // Set to 2-bounce for preview
-            params.maxBounces = maxBounces < 0 ? 2 : std::min(cl_int(2), maxBounces);
+            params.maxBounces = std::min((cl_uint)2, maxBounces);
             clctx->updateParams(params);
             N = 3;
 
@@ -984,7 +984,7 @@ void Tracer::handleKeypress(int key, int scancode, int action, int mods)
         matchInit(GLFW_KEY_F3,          loadState());
         matchInit(GLFW_KEY_SPACE,       updateAreaLight());
         matchInit(GLFW_KEY_I,           params.maxBounces += 1);
-        matchInit(GLFW_KEY_K,           params.maxBounces = std::max(0, params.maxBounces) - 1);
+        matchInit(GLFW_KEY_K,           params.maxBounces = std::max(1u, params.maxBounces) - 1);
         matchInit(GLFW_KEY_M,           toggleSamplingMode());
         matchInit(GLFW_KEY_C,           params.wfSeparateQueues = 1 - params.wfSeparateQueues; printf("\nSeparate queues: %u\n", params.wfSeparateQueues));
 
