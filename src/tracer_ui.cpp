@@ -205,9 +205,9 @@ void Tracer::addRendererSettings(Widget *parent)
     depthBox->setValue(std::min(99, (int)params.maxBounces));
     depthBox->setEditable(true);
     inputBoxes.push_back(depthBox);
-    depthBox->setFormat("[0-9][0-9]*");
+    depthBox->setFormat("-?[0-9]+");
     depthBox->setSpinnable(true);
-    depthBox->setMinMaxValues(0, 99);
+    depthBox->setMinMaxValues(-1, 99);
     depthBox->setValueIncrement(1);
     depthBox->setCallback([&](int value) {
         params.maxBounces = cl_uint(value);
@@ -220,14 +220,14 @@ void Tracer::addRendererSettings(Widget *parent)
     sppPanel->setLayout(new BoxLayout(Orientation::Horizontal, Alignment::Middle, 0, 5));
     IntBox<int> *sppBox = new IntBox<int>(sppPanel);
     uiMapping["MAX_SPP_BOX"] = sppBox;
-    sppBox->setFixedWidth(48);
+    sppBox->setFixedWidth(60);
     sppBox->setAlignment(TextBox::Alignment::Right);
-    sppBox->setValue(std::min(1000, int(params.maxSpp)));
+    sppBox->setValue(std::min(999, int(params.maxSpp)));
     sppBox->setEditable(true);
     inputBoxes.push_back(sppBox);
     sppBox->setFormat("[0-9]+");
     sppBox->setSpinnable(true);
-    sppBox->setMinMaxValues(0, 1000);
+    sppBox->setMinMaxValues(0, 999);
     sppBox->setValueIncrement(1);
     sppBox->setCallback([&](int value) {
         params.maxSpp = cl_uint(value);
@@ -240,9 +240,9 @@ void Tracer::addRendererSettings(Widget *parent)
     renderTimePanel->setLayout(new BoxLayout(Orientation::Horizontal, Alignment::Middle, 0, 5));
     IntBox<int> *renderTimeBox = new IntBox<int>(renderTimePanel);
     uiMapping["MAX_RENDER_TIME_BOX"] = renderTimeBox;
-    renderTimeBox->setFixedWidth(48);
+    renderTimeBox->setFixedWidth(76);
     renderTimeBox->setAlignment(TextBox::Alignment::Right);
-    renderTimeBox->setValue(std::min(1000, int(maxRenderTime)));
+    renderTimeBox->setValue(std::min(86400, int(maxRenderTime)));
     renderTimeBox->setEditable(true);
     inputBoxes.push_back(renderTimeBox);
     renderTimeBox->setFormat("[0-9]+");
