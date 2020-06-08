@@ -31,6 +31,7 @@ void Settings::init()
     useSeparateQueues = false;
     maxPathDepth = 10;
     maxSpp = 0; // 0 = no limit
+    maxRenderTime = 0; // 0 = no limit
     tonemap = 2; // UC2 default
     cameraSettings = {
         vfloat3(0.0f, 1.0f, 3.5f),
@@ -102,6 +103,7 @@ void Settings::import(json j)
     if (contains(j, "useSeparateQueues")) this->useSeparateQueues = j["useSeparateQueues"].get<bool>();
     if (contains(j, "maxPathDepth")) this->maxPathDepth = j["maxPathDepth"].get<int>();
     if (contains(j, "maxSpp")) this->maxSpp = j["maxSpp"].get<unsigned int>();
+    if (contains(j, "maxRenderTime")) this->maxRenderTime = j["maxRenderTime"].get<unsigned int>();
     if (contains(j, "tonemap")) this->tonemap = j["tonemap"].get<int>();
 
     // Map of numbers 1-6 to scenes (shortcuts)

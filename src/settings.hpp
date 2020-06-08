@@ -56,6 +56,7 @@ public:
     bool getUseSeparateQueues() { return useSeparateQueues; }
     int getMaxPathDepth() { return maxPathDepth; }
     unsigned int getMaxSpp() { return maxSpp; }
+    unsigned int getMaxRenderTime() { return maxRenderTime; }
     int getTonemap() { return tonemap; }
     CameraSettings getCameraSettings() { return cameraSettings; }
     AreaLightSettings getAreaLightSettings() { return areaLightSettings; }
@@ -85,6 +86,7 @@ private:
     bool useSeparateQueues;
     int maxPathDepth;
     unsigned int maxSpp;
+    unsigned int maxRenderTime;
     int tonemap;
     CameraSettings cameraSettings;
     AreaLightSettings areaLightSettings;

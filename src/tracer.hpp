@@ -122,6 +122,7 @@ private:
     FireRays::float2 cameraRotation;  // not passed to GPU but needed for camera basis vectors
     FireRays::float2 lastCursorPos;
     double lastUpdate = 0.0f;
+    double renderTimeStart;
     float cameraSpeed = 1.0f;
     bool mouseButtonState[3] = { false, false, false };
     bool paramsUpdatePending = true; // force initial param update
@@ -136,4 +137,5 @@ private:
     bool hasEnvMap = false;
 
     bool useWavefront;
+    unsigned int maxRenderTime;
 };

@@ -235,6 +235,26 @@ void Tracer::addRendererSettings(Widget *parent)
     });
     auto sppDesc = new Label(sppPanel, "Maximum Samples Per Pixel");
 
+    // Maximum Render Time allowed
+    Widget *renderTimePanel = new Widget(rendererPopup);
+    renderTimePanel->setLayout(new BoxLayout(Orientation::Horizontal, Alignment::Middle, 0, 5));
+    IntBox<int> *renderTimeBox = new IntBox<int>(renderTimePanel);
+    uiMapping["MAX_RENDER_TIME_BOX"] = renderTimeBox;
+    renderTimeBox->setFixedWidth(48);
+    renderTimeBox->setAlignment(TextBox::Alignment::Right);
+    renderTimeBox->setValue(std::min(1000, int(maxRenderTime)));
+    renderTimeBox->setEditable(true);
+    inputBoxes.push_back(renderTimeBox);
+    renderTimeBox->setFormat("[0-9]+");
+    renderTimeBox->setSpinnable(true);
+    renderTimeBox->setMinMaxValues(0, 86400);
+    renderTimeBox->setValueIncrement(1);
+    renderTimeBox->setCallback([&](int value) {
+        maxRenderTime = cl_uint(value);
+        paramsUpdatePending = true;
+    });
+    auto renderTimeDesc = new Label(renderTimePanel, "Maximum Render Time (s)");
+
     // Render scale
     new Label(rendererPopup, "Render scale", "sans-bold");
     Widget *renderScalePanel = new Widget(rendererPopup);
@@ -533,6 +553,9 @@ void Tracer::updateGUI()
 
     auto maxSppBox = static_cast<IntBox<int>*>(uiMapping["MAX_SPP_BOX"]);
     maxSppBox->setValue(params.maxSpp);
+
+    auto maxRenderTimeBpx = static_cast<IntBox<int>*>(uiMapping["MAX_RENDER_TIME_BOX"]);
+    maxRenderTimeBpx->setValue(int(maxRenderTime));
 
     auto camSpeedSlider = static_cast<Slider*>(uiMapping["CAM_SPEED_SLIDER"]);
     auto camSpeedBox = static_cast<FloatBox<float>*>(uiMapping["CAM_SPEED_BOX"]);

@@ -41,6 +41,9 @@ void Tracer::resetParams(int width, int height)
     auto& s = Settings::getInstance();
     const float renderScale = s.getRenderScale();
 
+    // not passed to GPU
+    maxRenderTime = Settings::getInstance().getMaxRenderTime();
+
     params.width = static_cast<unsigned int>(width * renderScale);
     params.height = static_cast<unsigned int>(height * renderScale);
     // env map will be overriden after scene load if it is present
@@ -219,6 +222,13 @@ void Tracer::update()
         clctx->updateParams(params);
         paramsUpdatePending = false;
         iteration = 0; // accumulation reset
+        renderTimeStart = newT;
+    }
+
+    if(maxRenderTime > 0 && newT >= renderTimeStart + maxRenderTime)
+    {
+        window->draw();
+        return;
     }
 
     QueueCounters cnt = {};
