@@ -166,26 +166,21 @@ kernel void logic(
 
     // Image accumulation
     uint terminateMask = 0;
-    uint samplesMask = 0;
 #ifdef NVIDIA
     terminateMask = ballot_sync(terminate, activemask());
-    samplesMask = ballot_sync(!maxSamplesReached, activemask());
 #endif
     if (terminate)
     {
-        if (!maxSamplesReached)
+        // need a second check for spp here
+        // probably could drop the first due to thread divergence
+        if (!maxSamplesReached && atomic_inc(&(samplesPerPixel[pixIdx])) <= params->maxSpp && len > 0)
         {
-            atomicIncMasked(samplesPerPixel + pixIdx, samplesMask);
-            if (len > 0)
-            {
-                float4 color = (float4)(ReadFloat3(Ei, tasks), 1.0f);
-                add_float4(pixels + pixIdx * 4, color);
-            }
+            float4 color = (float4)(ReadFloat3(Ei, tasks), 1.0f);
+            add_float4(pixels + pixIdx * 4, color);
         }
-
-        if(pixIdx % (1280 * 180) == 0)
+        if(samplesPerPixel[pixIdx] > params->maxSpp)
         {
-            printf("Samples: %d/%d\n", samplesPerPixel[pixIdx], params->maxSpp);
+            samplesPerPixel[pixIdx] = params->maxSpp;
         }
 
         uint idx = atomicIncMasked(&queueLens->raygenQueue, terminateMask);
