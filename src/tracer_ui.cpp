@@ -202,7 +202,7 @@ void Tracer::addRendererSettings(Widget *parent)
     uiMapping["MAX_BOUNCES_BOX"] = depthBox;
     depthBox->setFixedWidth(48);
     depthBox->setAlignment(TextBox::Alignment::Right);
-    depthBox->setValue(std::min(99, (int)params.maxBounces));
+    depthBox->setValue(std::min(99, int(params.maxBounces)));
     depthBox->setEditable(true);
     inputBoxes.push_back(depthBox);
     depthBox->setFormat("-?[0-9]+");
@@ -210,7 +210,7 @@ void Tracer::addRendererSettings(Widget *parent)
     depthBox->setMinMaxValues(-1, 99);
     depthBox->setValueIncrement(1);
     depthBox->setCallback([&](int value) {
-        params.maxBounces = cl_uint(value);
+        params.maxBounces = cl_int(value);
         paramsUpdatePending = true;
     });
     auto depthDesc = new Label(depthPanel, "Maximum path depth");

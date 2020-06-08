@@ -22,6 +22,8 @@ typedef FireRays::float2 vfloat2;
 #define M_2PI_F (6.2831853071795864f)
 #define toRad(deg) (deg * PI / 180)
 #define toDeg(rad) (rad * 180 / PI)
+// Path Length for RR
+#define MIN_PATH_LENGTH 5
 
 // For handling SoA data, only used on GPU
 // Variable names gid, numTasks are assumed for brevity
@@ -173,7 +175,7 @@ typedef struct
     cl_uint useEnvMap;
     cl_uint useAreaLight;
     cl_float envMapStrength;
-    cl_uint maxBounces;
+    cl_int maxBounces;
     cl_uint sampleImpl;    // use implicit light source sampling
     cl_uint sampleExpl;    // use next event estimation
     cl_uint useRoulette;   // Luminance-based russian roulette

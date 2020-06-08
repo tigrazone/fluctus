@@ -60,11 +60,15 @@ kernel void logic(
 
     // Russian roulette
     float contProb = 1.0f;
-    bool terminate = (len >= params->maxBounces + 1); // bounces = path_length - 1
-    if (terminate && params->useRoulette)
+    // maxBounces = -1 --> no maxBounces
+    bool terminate = params->maxBounces >= 0 && (len >= params->maxBounces + 1); // bounces = path_length - 1
+    // MIN_PATH_LENGTH at which we start using Russian Roulette
+    if (!terminate && params->useRoulette && len > MIN_PATH_LENGTH)
     {
         contProb = clamp(luminance(T), 0.01f, 0.5f);
+        // termination probability is 1 - contProb
         terminate = (rand(&seed) > contProb);
+        // divide by 1 - termination prop to compensate terminated paths
         T /= contProb;
         WriteFloat3(T, tasks, T);
     }
@@ -239,6 +243,7 @@ kernel void logic(
     
 #ifdef SAMPLE_EXPLICIT
     // Perform next event estimation: generate light sample + shadow ray
+    WriteU32(shadowRayBlocked, tasks, 1);
     if (params->sampleExpl && !BXDF_IS_SINGULAR(mat.type))
     {
         // Create probability distribution
