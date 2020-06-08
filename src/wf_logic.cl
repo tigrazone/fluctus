@@ -323,10 +323,6 @@ kernel void logic(
                 uint idx = atomic_inc(&queueLens->shadowQueue);
                 shadowQueue[idx] = gid;
             }
-            else // backface hit, don't even bother
-            {
-                WriteU32(shadowRayBlocked, tasks, 1);
-            }
         }
 #endif
     }
