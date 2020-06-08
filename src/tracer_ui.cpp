@@ -200,14 +200,14 @@ void Tracer::addRendererSettings(Widget *parent)
     depthPanel->setLayout(new BoxLayout(Orientation::Horizontal, Alignment::Middle, 0, 5));
     IntBox<int> *depthBox = new IntBox<int>(depthPanel);
     uiMapping["MAX_BOUNCES_BOX"] = depthBox;
-    depthBox->setFixedWidth(48);
+    depthBox->setFixedWidth(60);
     depthBox->setAlignment(TextBox::Alignment::Right);
-    depthBox->setValue(std::min(99, int(params.maxBounces)));
+    depthBox->setValue(std::min(999, int(params.maxBounces)));
     depthBox->setEditable(true);
     inputBoxes.push_back(depthBox);
     depthBox->setFormat("[0-9]+");
     depthBox->setSpinnable(true);
-    depthBox->setMinMaxValues(0, 99);
+    depthBox->setMinMaxValues(0, 999);
     depthBox->setValueIncrement(1);
     depthBox->setCallback([&](int value) {
         params.maxBounces = cl_uint(value);
