@@ -541,6 +541,283 @@ void Tracer::runBenchmark()
     }
 }
 
+void Tracer::runBenchmarkFromFile(std::string filename)
+{
+    Settings& settings = Settings::getInstance();
+
+    size_t fileNameStart = filename.find_last_of("\\"); // assume Windows
+    if (fileNameStart == std::string::npos) fileNameStart = filename.find_last_of("/"); // Linux/MacOS
+    std::string baseFolder = filename.substr(0, fileNameStart + 1);
+
+    std::ifstream fileStream(filename);
+    if (!fileStream)
+    {
+        std::cout << "Could not open file: " << filename << ", aborting benchmark..." << std::endl;
+        return;
+    }
+    json base;
+    fileStream >> base;
+
+    // Default Values
+    params.width = 1024;
+    params.height = 1024;
+    Settings::getInstance().setRenderScale(1.0f);
+
+    auto preprocessSettings = [&](json& jsonFile, const std::string& settingsKey)
+    {
+        // TODO bring to regular scene load
+        if (!json_contains(jsonFile, settingsKey))
+            return;
+        json& settingsFile = jsonFile[settingsKey];
+        if (json_contains(settingsFile, "envMap") && !isAbsolutePath(settingsFile["envMap"].get<std::string>()))
+        {
+            settingsFile["envMap"] = baseFolder + settingsFile["envMap"].get<std::string>();
+        }
+    };
+
+    auto importDefaultSettings = [&]()
+    {
+        if (json_contains(base, "defaultSettings"))
+            settings.import(base["defaultSettings"]);
+    };
+
+    auto importSettings = [&](const json& sceneJson)
+    {
+        importDefaultSettings();
+        if (json_contains(sceneJson, "settings"))
+            settings.import(sceneJson["settings"]);
+    };
+
+    auto initSettings = [&](const json& sceneJson)
+    {
+        importSettings(sceneJson);
+        resetParams(settings.getWindowWidth(), settings.getWindowHeight());
+        useWavefront = settings.getUseWavefront();
+        initCamera();
+        initPostProcessing();
+        initAreaLight();
+    };
+
+    // Called when scene changes
+    auto resetRenderer = [&]()
+    {
+        window->setSize(params.width, params.height);
+        clctx->recompileKernels(false);
+        updateGUI();
+        iteration = 0;
+        glFinish();
+        clctx->updateParams(params);
+        clctx->enqueueResetKernel(params);
+        clctx->enqueueWfResetKernel(params);
+        clctx->enqueueClearWfQueues();
+        clctx->finishQueue();
+        clctx->resetStats();
+    };
+
+    // Load Default Settings for all Benchmarks if provided
+    preprocessSettings(base, "defaultSettings");
+    importDefaultSettings();
+
+    std::string outputFolder = baseFolder;
+    // TODO check output folder for last char
+    if (json_contains(base, "outputFolder")) outputFolder = base["outputFolder"].get<std::string>();
+
+    json scenes = base["scenes"];
+
+    std::stringstream simpleReport;
+    std::stringstream csvReport;
+    csvReport << "time;primary;extension;shadow;total;samples\n";
+
+    // Stats include time dimension
+    std::vector<RenderStats> statsLog;
+    double lastLogTime = 0;
+
+    auto logStats = [&](double elapsed, double deltaTime)
+    {
+        RenderStats stats = clctx->getStats();
+        statsLog.push_back(stats);
+        clctx->resetStats();
+        lastLogTime = glfwGetTime();
+        double s = 1e6 * deltaTime;
+        csvReport << elapsed << ";" << stats.primaryRays / s << ";"
+            << stats.extensionRays / s << ";" << stats.shadowRays / s << ";"
+            << (stats.primaryRays + stats.extensionRays + stats.shadowRays) / s << ";"
+            << stats.samples / s << "\n";
+    };
+
+    toggleGUI();
+    window->setShowFPS(false);
+    auto prg = window->getProgressView();
+
+    int currentSceneNumber = 0;
+    for (json sceneJson : scenes)
+    {
+        // show progress bar
+        std::string progressTitle = "Running benchmark " + std::to_string(currentSceneNumber + 1) + "/" + std::to_string(scenes.size());
+        prg->showMessage(progressTitle, 0);
+
+        // process all custom settings
+        preprocessSettings(sceneJson,"settings");
+        initSettings(sceneJson);
+
+        // load scene
+        std::string sceneFile = baseFolder + sceneJson["file"].get<std::string>();
+        init(params.width, params.height, sceneFile);
+
+        // reset render state
+        resetRenderer();
+
+        double maxRenderTime = settings.getMaxRenderTime();
+        if (settings.getMaxRenderTime() == 0 && settings.getMaxSpp() == 0)
+        {
+            // no boundary condition given, use 30s as default
+            maxRenderTime = 30;
+        }
+
+        double startTime = glfwGetTime();
+        auto getProgress = [&](double currentTime)
+        {
+            const double timeProgress = maxRenderTime != 0 ? (currentTime - startTime) / maxRenderTime : 0.0;
+            // TODO capture SPP Progress
+            const double sppProgress = 0.0;
+            return std::max(timeProgress, sppProgress);
+        };
+        int maxSppCounter = 0;
+        // if maxRenderTime is 0, then render till maxSpp Condition is reached
+        // if both are given, we stop once one of them is reached (although maxSpp doesn't exit immediately due to the wavefronty nature)
+        // TODO fix that above. Should be possible!
+        double currentTime = startTime;
+        // Wavefront Segment Start
+        if (useWavefront)
+        {
+            clctx->enqueueWfRaygenKernel(params);
+            clctx->enqueueWfExtRayKernel(params);
+        }
+        while ((maxRenderTime == 0 || currentTime - startTime < maxRenderTime) && maxSppCounter < 10)
+        {
+            QueueCounters cnt;
+
+            glfwPollEvents();
+            if (!window->available()) exit(0); // react to exit button
+
+            if (useWavefront)
+            {
+                clctx->enqueueWfLogicKernel(params, false);
+                clctx->enqueueWfRaygenKernel(params);
+                clctx->enqueueWfMaterialKernels(params);
+                clctx->enqueueGetCounters(&cnt);
+                clctx->enqueueWfExtRayKernel(params);
+                clctx->enqueueWfShadowRayKernel(params);
+                clctx->enqueueClearWfQueues();
+            }
+            else
+            {
+                clctx->enqueueRayGenKernel(params);
+                clctx->enqueueNextVertexKernel(params);
+                clctx->enqueueBsdfSampleKernel(params);
+                clctx->enqueueSplatKernel(params);
+            }
+
+            // TODO add skip for efficiency
+            // Postprocess
+            clctx->enqueuePostprocessKernel(params);
+
+            // Synchronize
+            clctx->finishQueue();
+
+            // Update statistics
+            if (useWavefront)
+            {
+                // Update statsAsync based on queues
+                clctx->statsAsync.extensionRays += cnt.extensionQueue;
+                clctx->statsAsync.shadowRays += cnt.shadowQueue;
+                clctx->statsAsync.primaryRays += cnt.raygenQueue;
+                clctx->statsAsync.samples += (iteration > 0) ? cnt.raygenQueue : 0;
+            }
+            else
+            {
+                // Fetch explicit stats from device
+                clctx->fetchStatsAsync();
+            }
+
+            // Update index of next pixel to shade
+            clctx->updatePixelIndex(params.width * params.height, cnt.raygenQueue);
+
+            iteration++;
+            currentTime = glfwGetTime();
+            // Save statistics every half a second to log for further processing
+            double deltaTime = currentTime - lastLogTime;
+            if (deltaTime > 0.5)
+                logStats(currentTime - startTime, deltaTime);
+            prg->showMessage(progressTitle, getProgress(currentTime));
+        }
+
+        // Save final Image
+        std::string outputFile = outputFolder + sceneJson["outputFile"].get<std::string>();
+        clctx->saveImage(outputFile + ".png", params);
+        clctx->saveImage(outputFile + ".hdr", params);
+
+        // Process statistics for current scene
+        logStats(currentTime - startTime, currentTime - lastLogTime);
+
+        auto fillSimpleReport = [&]()
+        {
+            double time = currentTime - startTime;
+            unsigned long long sums[] = { 0, 0, 0, 0 };
+            for (RenderStats& stats : statsLog)
+            {
+                sums[0] += stats.primaryRays;
+                sums[1] += stats.extensionRays;
+                sums[2] += stats.shadowRays;
+                sums[3] += stats.samples;
+            }
+
+            double scale = 1e6 * time;
+            double prim = sums[0] / scale;
+            double ext = sums[1] / scale;
+            double shdw = sums[2] / scale;
+            double samp = sums[3] / scale;
+
+            char statistics[512];
+            sprintf(statistics, "%.1fM primary, %.2fM extension, %.2fM shadow, %.2fM samples, total: %.2fM rays/s", prim, ext, shdw, samp, prim + ext + shdw);
+            std::cout << statistics << std::endl;
+            simpleReport << statistics << std::endl;
+            statsLog.clear();
+        };
+
+        auto saveStats = [&]()
+        {
+            // save stats!
+            std::ofstream csvFile(outputFile + ".csv");
+            if (csvFile.good())
+            {
+                csvFile << csvReport.str();
+            }
+            else
+            {
+                std::cout << "Failed to write CSV benchmark report!" << std::endl;
+            }
+
+            std::ofstream txtFile(outputFile + ".txt");
+            if (txtFile.good())
+            {
+                txtFile << simpleReport.str();
+            }
+            else
+            {
+                std::cout << "Failed to write TXT benchmark report!" << std::endl;
+            }
+        };
+
+        fillSimpleReport();
+        saveStats();
+    }
+
+    prg->hide();
+    toggleGUI();
+    window->setShowFPS(true);
+}
+
 // Empty file name means scene selector is opened
 void Tracer::selectScene(std::string file)
 {
@@ -947,6 +1224,11 @@ void Tracer::handleFileDrop(int count, const char **filenames)
                 paramsUpdatePending = true;
             }
             
+            return;
+        }
+        if (endsWith(file, ".bm.json"))
+        {
+            runBenchmarkFromFile(file);
             return;
         }
     }

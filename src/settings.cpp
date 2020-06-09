@@ -3,7 +3,7 @@
 #include <math/matrix.hpp>
 #include "settings.hpp"
 
-using json = nlohmann::json;
+#include "utils.h"
 
 #define VEC_RIGHT vfloat3(1.0f, 0.0f, 0.0f)
 #define VEC_UP vfloat3(0.0f, 1.0f, 0.0f)
@@ -54,11 +54,6 @@ void Settings::init()
     };
 }
 
-inline bool contains(json j, std::string value)
-{
-    return j.find(value) != j.end();
-}
-
 void Settings::load()
 {
     std::ifstream i("settings.json");
@@ -72,7 +67,7 @@ void Settings::load()
     json j;
     i >> j;
 
-    if(!contains(j, "release") || !contains(j, "debug"))
+    if(!json_contains(j, "release") || !json_contains(j, "debug"))
     {
         std::cout << R"(Settings file must contain the objects "release" and "debug")" << std::endl;
         return;
@@ -89,34 +84,34 @@ void Settings::load()
 
 void Settings::import(json j)
 {
-    if (contains(j, "platformName")) this->platformName = j["platformName"].get<std::string>();
-    if (contains(j, "deviceName")) this->deviceName = j["deviceName"].get<std::string>();
-    if (contains(j, "envMap")) this->envMapName = j["envMap"].get<std::string>();
-    if (contains(j, "renderScale")) this->renderScale = j["renderScale"].get<float>();
-    if (contains(j, "windowWidth")) this->windowWidth = j["windowWidth"].get<int>();
-    if (contains(j, "windowHeight")) this->windowHeight = j["windowHeight"].get<int>();
-    if (contains(j, "clUseBitstack")) this->clUseBitstack = j["clUseBitstack"].get<bool>();
-    if (contains(j, "clUseSoA")) this->clUseSoA = j["clUseSoA"].get<bool>();
-    if (contains(j, "wfBufferSize")) this->wfBufferSize = j["wfBufferSize"].get<unsigned int>();
-    if (contains(j, "useWavefront")) this->useWavefront = j["useWavefront"].get<bool>();
-    if (contains(j, "useRussianRoulette")) this->useRussianRoulette = j["useRussianRoulette"].get<bool>();
-    if (contains(j, "useSeparateQueues")) this->useSeparateQueues = j["useSeparateQueues"].get<bool>();
-    if (contains(j, "maxPathDepth")) this->maxPathDepth = j["maxPathDepth"].get<int>();
-    if (contains(j, "maxSpp")) this->maxSpp = j["maxSpp"].get<unsigned int>();
-    if (contains(j, "maxRenderTime")) this->maxRenderTime = j["maxRenderTime"].get<unsigned int>();
-    if (contains(j, "tonemap")) this->tonemap = j["tonemap"].get<int>();
+    if (json_contains(j, "platformName")) this->platformName = j["platformName"].get<std::string>();
+    if (json_contains(j, "deviceName")) this->deviceName = j["deviceName"].get<std::string>();
+    if (json_contains(j, "envMap")) this->envMapName = j["envMap"].get<std::string>();
+    if (json_contains(j, "renderScale")) this->renderScale = j["renderScale"].get<float>();
+    if (json_contains(j, "windowWidth")) this->windowWidth = j["windowWidth"].get<int>();
+    if (json_contains(j, "windowHeight")) this->windowHeight = j["windowHeight"].get<int>();
+    if (json_contains(j, "clUseBitstack")) this->clUseBitstack = j["clUseBitstack"].get<bool>();
+    if (json_contains(j, "clUseSoA")) this->clUseSoA = j["clUseSoA"].get<bool>();
+    if (json_contains(j, "wfBufferSize")) this->wfBufferSize = j["wfBufferSize"].get<unsigned int>();
+    if (json_contains(j, "useWavefront")) this->useWavefront = j["useWavefront"].get<bool>();
+    if (json_contains(j, "useRussianRoulette")) this->useRussianRoulette = j["useRussianRoulette"].get<bool>();
+    if (json_contains(j, "useSeparateQueues")) this->useSeparateQueues = j["useSeparateQueues"].get<bool>();
+    if (json_contains(j, "maxPathDepth")) this->maxPathDepth = j["maxPathDepth"].get<int>();
+    if (json_contains(j, "maxSpp")) this->maxSpp = j["maxSpp"].get<unsigned int>();
+    if (json_contains(j, "maxRenderTime")) this->maxRenderTime = j["maxRenderTime"].get<unsigned int>();
+    if (json_contains(j, "tonemap")) this->tonemap = j["tonemap"].get<int>();
 
     // Map of numbers 1-6 to scenes (shortcuts)
-    if (contains(j, "shortcuts"))
+    if (json_contains(j, "shortcuts"))
     {
         json map = j["shortcuts"];
         for (unsigned int i = 1; i < 7; i++)
         {
             std::string numeral = std::to_string(i);
-            if (contains(map, numeral)) this->shortcuts[i] = map[numeral].get<std::string>();
+            if (json_contains(map, numeral)) this->shortcuts[i] = map[numeral].get<std::string>();
         }
     }
-    if (contains(j, "defaultScene"))
+    if (json_contains(j, "defaultScene"))
     {
         unsigned int defaultSceneNumber = j["defaultScene"].get<unsigned int>();
         auto scenePair = this->shortcuts.find(defaultSceneNumber);
@@ -126,10 +121,10 @@ void Settings::import(json j)
         }
     }
 
-    if (contains(j, "camera"))
+    if (json_contains(j, "camera"))
     {
         json map = j["camera"];
-        if (contains(map, "pos"))
+        if (json_contains(map, "pos"))
         {
             const auto values = map["pos"].get<std::vector<float>>();
             if (values.size() == 3)
@@ -137,7 +132,7 @@ void Settings::import(json j)
                 cameraSettings.pos = vfloat3(values[0], values[1], values[2]);
             }
         }
-        if (contains(map, "dir"))
+        if (json_contains(map, "dir"))
         {
             const auto values = map["dir"].get<std::vector<float>>();
             if (values.size() == 3)
@@ -150,7 +145,7 @@ void Settings::import(json j)
             }
         }
         // this overrides dir if existent
-        if (contains(map, "lookAt"))
+        if (json_contains(map, "lookAt"))
         {
             const auto values = map["lookAt"].get<std::vector<float>>();
             if (values.size() == 3)
@@ -163,11 +158,11 @@ void Settings::import(json j)
             }
         }
 
-        if (contains(map, "fov")) this->cameraSettings.fov = cl_float(map["fov"].get<float>());
-        if (contains(map, "apertureSize")) this->cameraSettings.apertureSize = cl_float(map["apertureSize"].get<float>());
-        if (contains(map, "focalDist")) this->cameraSettings.focalDist = cl_float(map["focalDist"].get<float>());
+        if (json_contains(map, "fov")) this->cameraSettings.fov = cl_float(map["fov"].get<float>());
+        if (json_contains(map, "apertureSize")) this->cameraSettings.apertureSize = cl_float(map["apertureSize"].get<float>());
+        if (json_contains(map, "focalDist")) this->cameraSettings.focalDist = cl_float(map["focalDist"].get<float>());
 
-        if (contains(map, "cameraRotation"))
+        if (json_contains(map, "cameraRotation"))
         {
             const auto values = map["cameraRotation"].get<std::vector<float>>();
             if (values.size() == 2)
@@ -178,13 +173,13 @@ void Settings::import(json j)
 
         calculateCameraMatrix();
 
-        if (contains(map, "cameraSpeed")) this->cameraSettings.cameraSpeed = map["cameraSpeed"].get<float>();
+        if (json_contains(map, "cameraSpeed")) this->cameraSettings.cameraSpeed = map["cameraSpeed"].get<float>();
     }
 
-    if (contains(j, "areaLight"))
+    if (json_contains(j, "areaLight"))
     {
         json map = j["areaLight"];
-        if (contains(map, "pos"))
+        if (json_contains(map, "pos"))
         {
             const auto values = map["pos"].get<std::vector<float>>();
             if (values.size() == 3)
@@ -192,7 +187,7 @@ void Settings::import(json j)
                 areaLightSettings.pos = FireRays::float4(values[0], values[1], values[2], 1.0f);
             }
         }
-        if (contains(map, "N"))
+        if (json_contains(map, "N"))
         {
             const auto values = map["N"].get<std::vector<float>>();
             if (values.size() == 3)
@@ -211,7 +206,7 @@ void Settings::import(json j)
                 areaLightSettings.up.normalize();
             }
         }
-        if (contains(map, "E"))
+        if (json_contains(map, "E"))
         {
             const auto values = map["E"].get<std::vector<float>>();
             switch (values.size()) {
@@ -226,7 +221,7 @@ void Settings::import(json j)
                 break;
             }
         }
-        if (contains(map, "size"))
+        if (json_contains(map, "size"))
         {
             const auto values = map["size"].get<std::vector<float>>();
             switch (values.size()) {

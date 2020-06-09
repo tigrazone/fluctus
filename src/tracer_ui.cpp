@@ -48,10 +48,7 @@ void Tracer::setupToolbar()
     addStateSettings(tools);
 
     // Run benchmark
-    auto benchmarkButton = new Button(tools, "Benchmark", ENTYPO_ICON_GAUGE);
-    benchmarkButton->setCallback([&]() {
-        runBenchmark();
-    });
+    addBenchmarkSettings(tools);
     
     // Export image
     auto exportButton = new Button(tools, "Save image", ENTYPO_ICON_CAMERA);
@@ -499,6 +496,27 @@ void Tracer::addStateSettings(Widget *parent)
 
     Button *saveStateBtn = new Button(statePanel, "Save", ENTYPO_ICON_DOWNLOAD);
     saveStateBtn->setCallback([&] { saveState(); });
+}
+
+
+void Tracer::addBenchmarkSettings(Widget *parent)
+{
+    PopupButton *bmBtn = new PopupButton(parent, "Benchmark");
+    Popup *bmPopup = bmBtn->popup();
+    bmPopup->setLayout(new GroupLayout());
+
+    // Load
+    auto bmLoadBtn = new Button(bmPopup, "Load Custom", ENTYPO_ICON_FOLDER);
+    bmLoadBtn->setCallback([&]() {
+        window->showMessage("Loading custom benchmark file");
+        const std::string name = openFileDialog("Select benchmark", "assets/benchmarks/", { "*.bm.json" });
+        if (name.empty()) return;
+        window->hideMessage();
+        runBenchmarkFromFile(name);
+    });
+
+    auto benchmarkButton = new Button(bmPopup, "Run Default", ENTYPO_ICON_GAUGE);
+    benchmarkButton->setCallback([&]() { runBenchmark(); });
 }
 
 

@@ -37,6 +37,9 @@ public:
     Settings(Settings const&) = delete;
     void operator=(Settings const&) = delete;
 
+    // allow import from custom json
+    void import(nlohmann::json j);
+
     // Getters
     std::string getPlatformName() { return platformName; }
     std::string getDeviceName() { return deviceName; }
@@ -65,7 +68,6 @@ private:
     Settings();
     void init();
     void load();
-    void import(nlohmann::json j);
     void calculateCameraRotation();
     void calculateCameraMatrix();
 

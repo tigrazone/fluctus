@@ -9,8 +9,6 @@
 #include "bxdf_types.h"
 
 #include <set>
-#include <json.hpp>
-using json = nlohmann::json;
 
 Scene::Scene()
 {
@@ -879,11 +877,6 @@ void Scene::unpackIndexedData(const std::vector<fr::float3> &positions,
 
         triangles.push_back(RTTriangle(v0, v1, v2));
     }
-};
-
-inline bool contains(json j, std::string value)
-{
-    return j.find(value) != j.end();
 }
 
 void Scene::loadSceneFile(const std::string filename, ProgressView *progress)
@@ -906,11 +899,11 @@ void Scene::loadSceneFile(const std::string filename, ProgressView *progress)
         const std::string sceneFile = sceneInfo["file"].get<std::string>();
         progress->showMessage("Loading Model " + sceneFile);
         ModelTransform transform;
-        if (contains(sceneInfo, "scale"))
+        if (json_contains(sceneInfo, "scale"))
         {
             transform.scale = sceneInfo["scale"].get<float>();
         }
-        if (contains(sceneInfo, "translation"))
+        if (json_contains(sceneInfo, "translation"))
         {
             transform.translation = fr::float3(sceneInfo["translation"]["x"].get<float>(), sceneInfo["translation"]["y"].get<float>(), sceneInfo["translation"]["z"].get<float>());
         }

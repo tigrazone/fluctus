@@ -5,6 +5,15 @@
 #include <iostream>
 #include <vector>
 
+bool isAbsolutePath(std::string filename)
+{
+#ifdef _WIN32
+    return filename.find(':') != std::string::npos;
+#else
+    return filename.find('/') == 0;
+#endif
+}
+
 std::string getAbsolutePath(std::string filename)
 {
     const int MAX_LENTH = 4096;
@@ -51,6 +60,11 @@ std::string unixifyPath(std::string path)
     }
 
     return path;
+}
+
+bool json_contains(const json& j, std::string value)
+{
+    return j.find(value) != j.end();
 }
 
 std::string getFileName(const std::string path)

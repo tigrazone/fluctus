@@ -6,6 +6,7 @@
 #include <vector>
 #include "cl2.hpp"
 #include "bxdf_types.h"
+#include <json.hpp>
 
 // Determine target
 #if _WIN32 || _WIN64
@@ -60,12 +61,18 @@ inline bool platformIsNvidia(cl::Platform& platform)
     return name.find("NVIDIA") != std::string::npos;
 }
 
+
+bool isAbsolutePath(std::string filename);
 std::string getAbsolutePath(std::string filename);
 std::string getFileName(const std::string path);
 
 bool endsWith(const std::string s, const std::string end);
 bool endsWithAny(const std::string s, const std::vector<std::string> ends);
 std::string unixifyPath(std::string path);
+
+
+using json = nlohmann::json;
+bool json_contains(const json& j, std::string value);
 
 std::string openFileDialog(const std::string message, const std::string defaultPath, const std::vector<const char*> filter);
 std::string saveFileDialog(const std::string message, const std::string defaultPath, const std::vector<const char*> filter);

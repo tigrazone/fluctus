@@ -41,6 +41,7 @@ public:
     bool running();
     void update();
     void runBenchmark();
+    void runBenchmarkFromFile(std::string filename);
     void resizeBuffers(int w, int h);
     void handleMouseButton(int key, int action, int mods);
     void handleCursorPos(double x, double y);
@@ -68,6 +69,7 @@ private:
     void addEnvMapSettings(nanogui::Widget *parent);
     void addAreaLightSettings(nanogui::Widget *parent);
     void addStateSettings(nanogui::Widget *parent);
+    void addBenchmarkSettings(nanogui::Widget *parent);
     void updateGUI();
     void toggleGUI();
     bool shouldSkipPoll();
