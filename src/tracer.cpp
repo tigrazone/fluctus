@@ -546,7 +546,7 @@ void Tracer::selectScene(std::string file)
 {
     if (file.empty())
     {
-        const std::string selected = openFileDialog("Select a scene file", "assets/", { "*.obj", "*.ply", "*.pbrt" });
+        const std::string selected = openFileDialog("Select a scene file", "assets/", { "*.obj", "*.ply", "*.pbf", "*.pbrt", "*.sc.json" });
         file = (!selected.empty()) ? selected : "assets/egyptcat/egyptcat.obj";
     }
 
