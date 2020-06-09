@@ -385,7 +385,7 @@ void Tracer::runBenchmark()
     // Called when scene changes
     auto resetRenderer = [&]()
     {
-        iteration = 0;   
+        iteration = 0;
         glFinish();
         clctx->updateParams(params);
         clctx->enqueueResetKernel(params);
@@ -553,7 +553,10 @@ void Tracer::selectScene(std::string file)
     scene.reset(new Scene());
     scene->loadModel(file, window->getProgressView());
     if (envMap)
+    {
         scene->setEnvMap(envMap);
+        params.useEnvMap = cl_int(true);
+    }
 
     sceneHash = scene->hashString();
 
