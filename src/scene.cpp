@@ -903,7 +903,11 @@ void Scene::loadSceneFile(const std::string filename, ProgressView *progress)
         }
         if (json_contains(sceneInfo, "translation"))
         {
-            transform.translation = fr::float3(sceneInfo["translation"]["x"].get<float>(), sceneInfo["translation"]["y"].get<float>(), sceneInfo["translation"]["z"].get<float>());
+            const auto translation = sceneInfo["translation"].get<std::vector<float>>();
+            if (translation.size() == 3)
+            {
+                transform.translation = fr::float3(translation[0], translation[1], translation[2]);
+            }
         }
         std::string outputFolder = isAbsolutePath(sceneFile) ? sceneFile : folderPath + sceneFile;
         loadModel(folderPath + sceneFile, progress, &transform);

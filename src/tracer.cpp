@@ -564,7 +564,6 @@ void Tracer::runBenchmarkFromFile(std::string filename)
 
     auto preprocessSettings = [&](json& jsonFile)
     {
-        // TODO bring to regular scene load
         if (!json_contains(jsonFile, SETTINGS_KEY))
             return;
         json& settingsFile = jsonFile[SETTINGS_KEY];
@@ -618,7 +617,6 @@ void Tracer::runBenchmarkFromFile(std::string filename)
     importDefaultSettings();
 
     std::string outputFolder = baseFolder;
-    // TODO check output folder for last char
     if (json_contains(base, "outputFolder"))
     {
         const std::string outputFolderBase = getUnixFolderPath(base["outputFolder"].get<std::string>(), false);
@@ -720,7 +718,7 @@ void Tracer::runBenchmarkFromFile(std::string filename)
                 clctx->enqueueSplatKernel(params);
             }
 
-            // TODO add skip for efficiency
+            // TODO add possible skip for efficiency
             // Postprocess
             clctx->enqueuePostprocessKernel(params);
 
