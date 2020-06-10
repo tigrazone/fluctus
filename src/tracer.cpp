@@ -544,6 +544,7 @@ void Tracer::runBenchmark()
 void Tracer::runBenchmarkFromFile(std::string filename)
 {
     const std::string SETTINGS_KEY = "settings";
+    const std::string SKIP_PP_KEY = "skipPP";
 
     Settings& settings = Settings::getInstance();
     std::string baseFolder = getUnixFolderPath(filename, true);
@@ -561,6 +562,7 @@ void Tracer::runBenchmarkFromFile(std::string filename)
     params.width = 1024;
     params.height = 1024;
     Settings::getInstance().setRenderScale(1.0f);
+    bool skipPostProcess = false;
 
     auto preprocessSettings = [&](json& jsonFile)
     {
@@ -573,21 +575,27 @@ void Tracer::runBenchmarkFromFile(std::string filename)
         }
     };
 
-    auto importDefaultSettings = [&]()
+    auto importSettings = [&](const json& baseJson)
     {
-        if (json_contains(base, SETTINGS_KEY))
-            settings.import(base[SETTINGS_KEY]);
+        if (json_contains(baseJson, SETTINGS_KEY))
+        {
+            const json& settingsJson = baseJson[SETTINGS_KEY];
+            settings.import(settingsJson);
+            if (json_contains(settingsJson, SKIP_PP_KEY))
+            {
+                skipPostProcess = settingsJson[SKIP_PP_KEY].get<bool>();
+            }
+        }
     };
 
-    auto importSettings = [&](const json& sceneJson)
+    auto importDefaultSettings = [&]()
     {
-        importDefaultSettings();
-        if (json_contains(sceneJson, SETTINGS_KEY))
-            settings.import(sceneJson[SETTINGS_KEY]);
+        importSettings(base);
     };
 
     auto initSettings = [&](const json& sceneJson)
     {
+        importDefaultSettings();
         importSettings(sceneJson);
         resetParams(settings.getWindowWidth(), settings.getWindowHeight());
         useWavefront = settings.getUseWavefront();
@@ -677,9 +685,9 @@ void Tracer::runBenchmarkFromFile(std::string filename)
         double startTime = glfwGetTime();
         auto getProgress = [&](double currentTime)
         {
-            const double timeProgress = maxRenderTime != 0 ? (currentTime - startTime) / maxRenderTime : 0.0;
+            const float timeProgress = maxRenderTime != 0 ? float((currentTime - startTime) / maxRenderTime) : 0.0f;
             // TODO capture SPP Progress
-            const double sppProgress = 0.0;
+            const float sppProgress = 0.0f;
             return std::max(timeProgress, sppProgress);
         };
         int maxSppCounter = 0;
@@ -718,9 +726,12 @@ void Tracer::runBenchmarkFromFile(std::string filename)
                 clctx->enqueueSplatKernel(params);
             }
 
-            // TODO add possible skip for efficiency
-            // Postprocess
-            clctx->enqueuePostprocessKernel(params);
+            // Possible Skip PP during Benchmarking
+            if (!skipPostProcess)
+            {
+                // Postprocess
+                clctx->enqueuePostprocessKernel(params);
+            }
 
             // Synchronize
             clctx->finishQueue();
@@ -814,8 +825,9 @@ void Tracer::runBenchmarkFromFile(std::string filename)
     }
 
     prg->hide();
-    toggleGUI();
     importDefaultSettings();
+    resetRenderer();
+    toggleGUI();
     window->setShowFPS(true);
 }
 
