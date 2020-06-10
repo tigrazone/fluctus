@@ -103,6 +103,10 @@ void Settings::import(json j)
     if (json_contains(j, "maxPathDepth")) this->maxPathDepth = j["maxPathDepth"].get<int>();
     if (json_contains(j, "maxSpp")) this->maxSpp = j["maxSpp"].get<unsigned int>();
     if (json_contains(j, "maxRenderTime")) this->maxRenderTime = j["maxRenderTime"].get<unsigned int>();
+    if (json_contains(j, "sampleImplicit")) this->sampleImplicit = j["sampleImplicit"].get<bool>();
+    if (json_contains(j, "sampleExplicit")) this->sampleExplicit = j["sampleExplicit"].get<bool>();
+    if (json_contains(j, "useEnvMap")) this->useEnvMap = j["useEnvMap"].get<bool>();
+    if (json_contains(j, "useAreaLight")) this->useAreaLight = j["useAreaLight"].get<bool>();
     if (json_contains(j, "tonemap")) this->tonemap = j["tonemap"].get<int>();
 
     // Map of numbers 1-6 to scenes (shortcuts)
