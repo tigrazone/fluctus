@@ -255,6 +255,7 @@ typedef struct
     cl_uint ggxRefrQueue;
     cl_uint deltaQueue;
     cl_uint emissiveQueue;
+    cl_uint splattedSamples;
 } QueueCounters;
 
 typedef struct

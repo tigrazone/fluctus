@@ -1,5 +1,8 @@
 #include <ctime>
 #include "tracer.hpp"
+
+#include <direct.h>
+
 #include "window.hpp"
 #include "progressview.hpp"
 #include "clcontext.hpp"
@@ -630,6 +633,7 @@ void Tracer::runBenchmarkFromFile(std::string filename)
         const std::string outputFolderBase = getUnixFolderPath(base["outputFolder"].get<std::string>(), false);
         outputFolder = isAbsolutePath(outputFolderBase) ? outputFolderBase : baseFolder + outputFolderBase;
     }
+    mkdir(outputFolder.c_str());
 
     json scenes = base["scenes"];
 
@@ -683,14 +687,15 @@ void Tracer::runBenchmarkFromFile(std::string filename)
         }
 
         double startTime = glfwGetTime();
+        unsigned long long sampleCount = 0L;
+        unsigned long long maxSampleCount = static_cast<unsigned long long>(params.width * params.height) * params.maxSpp;
         auto getProgress = [&](double currentTime)
         {
             const float timeProgress = maxRenderTime != 0 ? float((currentTime - startTime) / maxRenderTime) : 0.0f;
-            // TODO capture SPP Progress
-            const float sppProgress = 0.0f;
+            // Extra check for equality, not sure with long to double conversion and then dividing
+            const float sppProgress = maxSampleCount == 0 ? 0 : sampleCount == maxSampleCount ? 1.0f : std::min(float(double(sampleCount) / maxSampleCount), 0.9999f);
             return std::max(timeProgress, sppProgress);
         };
-        int maxSppCounter = 0;
         // if maxRenderTime is 0, then render till maxSpp Condition is reached
         // if both are given, we stop once one of them is reached (although maxSpp doesn't exit immediately due to the wavefronty nature)
         // TODO fix that above. Should be possible!
@@ -701,7 +706,7 @@ void Tracer::runBenchmarkFromFile(std::string filename)
             clctx->enqueueWfRaygenKernel(params);
             clctx->enqueueWfExtRayKernel(params);
         }
-        while ((maxRenderTime == 0 || currentTime - startTime < maxRenderTime) && maxSppCounter < 10)
+        while ((maxRenderTime == 0 || currentTime - startTime < maxRenderTime) && (maxSampleCount == 0 || sampleCount < maxSampleCount))
         {
             QueueCounters cnt;
 
@@ -744,6 +749,11 @@ void Tracer::runBenchmarkFromFile(std::string filename)
                 clctx->statsAsync.shadowRays += cnt.shadowQueue;
                 clctx->statsAsync.primaryRays += cnt.raygenQueue;
                 clctx->statsAsync.samples += (iteration > 0) ? cnt.raygenQueue : 0;
+                sampleCount += cnt.splattedSamples;
+
+                // Update index of next pixel to shade
+                // only needed for WF
+                clctx->updatePixelIndex(params.width * params.height, cnt.raygenQueue);
             }
             else
             {
@@ -751,16 +761,24 @@ void Tracer::runBenchmarkFromFile(std::string filename)
                 clctx->fetchStatsAsync();
             }
 
-            // Update index of next pixel to shade
-            clctx->updatePixelIndex(params.width * params.height, cnt.raygenQueue);
-
             iteration++;
             currentTime = glfwGetTime();
             // Save statistics every half a second to log for further processing
             double deltaTime = currentTime - lastLogTime;
             if (deltaTime > 0.5)
+            {
+                sampleCount += clctx->getStats().samples;
                 logStats(currentTime - startTime, deltaTime);
+            }
             prg->showMessage(progressTitle, getProgress(currentTime));
+        }
+
+        // If Skipped Before, PP before saving
+        if (skipPostProcess)
+        {
+            // Postprocess
+            clctx->enqueuePostprocessKernel(params);
+            clctx->finishQueue();
         }
 
         // Save final Image
@@ -822,6 +840,7 @@ void Tracer::runBenchmarkFromFile(std::string filename)
 
         fillSimpleReport();
         saveStats();
+        currentSceneNumber++;
     }
 
     prg->hide();

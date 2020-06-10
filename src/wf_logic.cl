@@ -184,8 +184,9 @@ kernel void logic(
         {
             float4 color = (float4)(ReadFloat3(Ei, tasks), 1.0f);
             add_float4(pixels + pixIdx * 4, color);
+            atomicIncCounter(&queueLens->splattedSamples);
         }
-        if(samplesPerPixel[pixIdx] > params->maxSpp)
+        if (samplesPerPixel[pixIdx] > params->maxSpp)
         {
             samplesPerPixel[pixIdx] = params->maxSpp;
         }

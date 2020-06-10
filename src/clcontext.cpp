@@ -651,7 +651,7 @@ void CLContext::setupStats()
 
 void CLContext::resetStats()
 {
-    RenderStats s = { 0, 0, 0, 0 };
+    RenderStats s = { 0, 0, 0, 0, };
     statsAsync = s;
     err = cmdQueue.enqueueWriteBuffer(deviceBuffers.renderStats, CL_TRUE, 0, sizeof(RenderStats), &s);
     verify("Stats buffer reset failed!");
