@@ -32,6 +32,10 @@ void Settings::init()
     maxPathDepth = 10;
     maxSpp = 0; // 0 = no limit
     maxRenderTime = 0; // 0 = no limit
+    sampleImplicit = true;
+    sampleExplicit = true;
+    useEnvMap = false;
+    useAreaLight = true;
     tonemap = 2; // UC2 default
     cameraSettings = {
         vfloat3(0.0f, 1.0f, 3.5f),

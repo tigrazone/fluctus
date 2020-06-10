@@ -60,6 +60,10 @@ public:
     int getMaxPathDepth() { return maxPathDepth; }
     unsigned int getMaxSpp() { return maxSpp; }
     unsigned int getMaxRenderTime() { return maxRenderTime; }
+    bool getSampleImplicit() { return sampleImplicit; }
+    bool getSampleExplicit() { return sampleExplicit; }
+    bool getUseEnvMap() { return useEnvMap; }
+    bool getUseAreaLight() { return useAreaLight; }
     int getTonemap() { return tonemap; }
     CameraSettings getCameraSettings() { return cameraSettings; }
     AreaLightSettings getAreaLightSettings() { return areaLightSettings; }
@@ -89,6 +93,10 @@ private:
     int maxPathDepth;
     unsigned int maxSpp;
     unsigned int maxRenderTime;
+    bool sampleImplicit;
+    bool sampleExplicit;
+    bool useEnvMap;
+    bool useAreaLight;
     int tonemap;
     CameraSettings cameraSettings;
     AreaLightSettings areaLightSettings;

@@ -47,12 +47,12 @@ void Tracer::resetParams(int width, int height)
     params.width = static_cast<unsigned int>(width * renderScale);
     params.height = static_cast<unsigned int>(height * renderScale);
     // env map will be overriden after scene load if it is present
-    params.useEnvMap = cl_uint(false);
-    params.useAreaLight = cl_uint(true);
+    params.useEnvMap = cl_uint(s.getUseEnvMap());
+    params.useAreaLight = cl_uint(s.getUseAreaLight());
     params.envMapStrength = 1.0f;
     params.maxBounces = s.getMaxPathDepth();
-    params.sampleImpl = cl_uint(true);
-    params.sampleExpl = cl_uint(true);
+    params.sampleImpl = cl_uint(s.getSampleImplicit());
+    params.sampleExpl = cl_uint(s.getSampleExplicit());
     params.useRoulette = cl_uint(s.getUseRussianRoulette());
     params.wfSeparateQueues = cl_uint(s.getUseSeparateQueues());
     params.maxSpp = cl_uint(s.getMaxSpp());
