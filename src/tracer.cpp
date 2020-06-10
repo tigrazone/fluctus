@@ -624,27 +624,6 @@ void Tracer::runBenchmarkFromFile(std::string filename)
 
     json scenes = base["scenes"];
 
-    std::stringstream simpleReport;
-    std::stringstream csvReport;
-    csvReport << "time;primary;extension;shadow;total;samples\n";
-
-    // Stats include time dimension
-    std::vector<RenderStats> statsLog;
-    double lastLogTime = 0;
-
-    auto logStats = [&](double elapsed, double deltaTime)
-    {
-        RenderStats stats = clctx->getStats();
-        statsLog.push_back(stats);
-        clctx->resetStats();
-        lastLogTime = glfwGetTime();
-        double s = 1e6 * deltaTime;
-        csvReport << elapsed << ";" << stats.primaryRays / s << ";"
-            << stats.extensionRays / s << ";" << stats.shadowRays / s << ";"
-            << (stats.primaryRays + stats.extensionRays + stats.shadowRays) / s << ";"
-            << stats.samples / s << "\n";
-    };
-
     toggleGUI();
     window->setShowFPS(false);
     auto prg = window->getProgressView();
@@ -655,6 +634,26 @@ void Tracer::runBenchmarkFromFile(std::string filename)
         // show progress bar
         std::string progressTitle = "Running benchmark " + std::to_string(currentSceneNumber + 1) + "/" + std::to_string(scenes.size());
         prg->showMessage(progressTitle, 0);
+
+        // Init Logging for the current scene
+        std::stringstream simpleReport;
+        std::stringstream csvReport;
+        csvReport << "time;primary;extension;shadow;total;samples\n";
+        // Stats include time dimension
+        std::vector<RenderStats> statsLog;
+        double lastLogTime = 0;
+        auto logStats = [&](double elapsed, double deltaTime)
+        {
+            RenderStats stats = clctx->getStats();
+            statsLog.push_back(stats);
+            clctx->resetStats();
+            lastLogTime = glfwGetTime();
+            double s = 1e6 * deltaTime;
+            csvReport << elapsed << ";" << stats.primaryRays / s << ";"
+                << stats.extensionRays / s << ";" << stats.shadowRays / s << ";"
+                << (stats.primaryRays + stats.extensionRays + stats.shadowRays) / s << ";"
+                << stats.samples / s << "\n";
+        };
 
         // process all custom settings
         preprocessSettings(sceneJson,"settings");
