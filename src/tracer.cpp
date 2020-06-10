@@ -476,6 +476,9 @@ void Tracer::runBenchmark()
                 clctx->statsAsync.shadowRays += cnt.shadowQueue;
                 clctx->statsAsync.primaryRays += cnt.raygenQueue;
                 clctx->statsAsync.samples += (iteration > 0) ? cnt.raygenQueue : 0;
+
+                // Update index of next pixel to shade
+                clctx->updatePixelIndex(params.width * params.height, cnt.raygenQueue);
             }
             else
             {
@@ -483,8 +486,6 @@ void Tracer::runBenchmark()
                 clctx->fetchStatsAsync();
             }
 
-            // Update index of next pixel to shade
-            clctx->updatePixelIndex(params.width * params.height, cnt.raygenQueue);
 
             // Draw image + loading bar
             prg->showMessage("Running benchmark " + counter, (currT - startT) / RENDER_LEN);
