@@ -881,9 +881,7 @@ void Scene::unpackIndexedData(const std::vector<fr::float3> &positions,
 
 void Scene::loadSceneFile(const std::string filename, ProgressView *progress)
 {
-    size_t fileNameStart = filename.find_last_of("\\"); // assume Windows
-    if (fileNameStart == std::string::npos) fileNameStart = filename.find_last_of("/"); // Linux/MacOS
-    std::string folderPath = filename.substr(0, fileNameStart + 1);
+    std::string folderPath = getUnixFolderPath(filename, true);
 
     std::ifstream sceneStream(filename);
     if (!sceneStream)
@@ -907,6 +905,7 @@ void Scene::loadSceneFile(const std::string filename, ProgressView *progress)
         {
             transform.translation = fr::float3(sceneInfo["translation"]["x"].get<float>(), sceneInfo["translation"]["y"].get<float>(), sceneInfo["translation"]["z"].get<float>());
         }
+        std::string outputFolder = isAbsolutePath(sceneFile) ? sceneFile : folderPath + sceneFile;
         loadModel(folderPath + sceneFile, progress, &transform);
     }
 }

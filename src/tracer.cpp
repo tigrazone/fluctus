@@ -543,11 +543,10 @@ void Tracer::runBenchmark()
 
 void Tracer::runBenchmarkFromFile(std::string filename)
 {
-    Settings& settings = Settings::getInstance();
+    const std::string SETTINGS_KEY = "settings";
 
-    size_t fileNameStart = filename.find_last_of("\\"); // assume Windows
-    if (fileNameStart == std::string::npos) fileNameStart = filename.find_last_of("/"); // Linux/MacOS
-    std::string baseFolder = filename.substr(0, fileNameStart + 1);
+    Settings& settings = Settings::getInstance();
+    std::string baseFolder = getUnixFolderPath(filename, true);
 
     std::ifstream fileStream(filename);
     if (!fileStream)
@@ -563,12 +562,12 @@ void Tracer::runBenchmarkFromFile(std::string filename)
     params.height = 1024;
     Settings::getInstance().setRenderScale(1.0f);
 
-    auto preprocessSettings = [&](json& jsonFile, const std::string& settingsKey)
+    auto preprocessSettings = [&](json& jsonFile)
     {
         // TODO bring to regular scene load
-        if (!json_contains(jsonFile, settingsKey))
+        if (!json_contains(jsonFile, SETTINGS_KEY))
             return;
-        json& settingsFile = jsonFile[settingsKey];
+        json& settingsFile = jsonFile[SETTINGS_KEY];
         if (json_contains(settingsFile, "envMap") && !isAbsolutePath(settingsFile["envMap"].get<std::string>()))
         {
             settingsFile["envMap"] = baseFolder + settingsFile["envMap"].get<std::string>();
@@ -577,15 +576,15 @@ void Tracer::runBenchmarkFromFile(std::string filename)
 
     auto importDefaultSettings = [&]()
     {
-        if (json_contains(base, "defaultSettings"))
-            settings.import(base["defaultSettings"]);
+        if (json_contains(base, SETTINGS_KEY))
+            settings.import(base[SETTINGS_KEY]);
     };
 
     auto importSettings = [&](const json& sceneJson)
     {
         importDefaultSettings();
-        if (json_contains(sceneJson, "settings"))
-            settings.import(sceneJson["settings"]);
+        if (json_contains(sceneJson, SETTINGS_KEY))
+            settings.import(sceneJson[SETTINGS_KEY]);
     };
 
     auto initSettings = [&](const json& sceneJson)
@@ -615,12 +614,16 @@ void Tracer::runBenchmarkFromFile(std::string filename)
     };
 
     // Load Default Settings for all Benchmarks if provided
-    preprocessSettings(base, "defaultSettings");
+    preprocessSettings(base);
     importDefaultSettings();
 
     std::string outputFolder = baseFolder;
     // TODO check output folder for last char
-    if (json_contains(base, "outputFolder")) outputFolder = base["outputFolder"].get<std::string>();
+    if (json_contains(base, "outputFolder"))
+    {
+        const std::string outputFolderBase = getUnixFolderPath(base["outputFolder"].get<std::string>(), false);
+        outputFolder = isAbsolutePath(outputFolderBase) ? outputFolderBase : baseFolder + outputFolderBase;
+    }
 
     json scenes = base["scenes"];
 
@@ -656,7 +659,7 @@ void Tracer::runBenchmarkFromFile(std::string filename)
         };
 
         // process all custom settings
-        preprocessSettings(sceneJson,"settings");
+        preprocessSettings(sceneJson);
         initSettings(sceneJson);
 
         // load scene
@@ -814,6 +817,7 @@ void Tracer::runBenchmarkFromFile(std::string filename)
 
     prg->hide();
     toggleGUI();
+    importDefaultSettings();
     window->setShowFPS(true);
 }
 

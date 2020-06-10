@@ -5,7 +5,7 @@
 #include <iostream>
 #include <vector>
 
-bool isAbsolutePath(std::string filename)
+bool isAbsolutePath(const std::string filename)
 {
 #ifdef _WIN32
     return filename.find(':') != std::string::npos;
@@ -14,7 +14,7 @@ bool isAbsolutePath(std::string filename)
 #endif
 }
 
-std::string getAbsolutePath(std::string filename)
+std::string getAbsolutePath(const std::string filename)
 {
     const int MAX_LENTH = 4096;
     char resolved_path[MAX_LENTH];
@@ -72,6 +72,17 @@ std::string getFileName(const std::string path)
     const std::string upath = unixifyPath(path);
     size_t idx = path.find("/", 0) + 1;
     return upath.substr(idx, upath.length() - idx);
+}
+
+std::string getUnixFolderPath(const std::string path, const bool isFile)
+{
+    std::string unixPath = unixifyPath(path);
+    if (isFile)
+    {
+        return unixPath.substr(0, unixPath.find_last_of('/') + 1);
+
+    }
+    return unixPath.find_last_of('/') == unixPath.size() - 1 ? unixPath : unixPath + "/";
 }
 
 std::string openFileDialog(const std::string message, const std::string defaultPath, const std::vector<const char*> filter)

@@ -62,9 +62,10 @@ inline bool platformIsNvidia(cl::Platform& platform)
 }
 
 
-bool isAbsolutePath(std::string filename);
-std::string getAbsolutePath(std::string filename);
+bool isAbsolutePath(const std::string filename);
+std::string getAbsolutePath(const std::string filename);
 std::string getFileName(const std::string path);
+std::string getUnixFolderPath(const std::string path, const bool isFile);
 
 bool endsWith(const std::string s, const std::string end);
 bool endsWithAny(const std::string s, const std::vector<std::string> ends);
