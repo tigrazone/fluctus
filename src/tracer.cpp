@@ -1,8 +1,6 @@
 #include <ctime>
 #include "tracer.hpp"
 
-#include <direct.h>
-
 #include "window.hpp"
 #include "progressview.hpp"
 #include "clcontext.hpp"
@@ -601,6 +599,8 @@ void Tracer::runBenchmarkFromFile(std::string filename)
     {
         importDefaultSettings();
         importSettings(sceneJson);
+        window->setSize(settings.getWindowWidth(), settings.getWindowHeight());
+        updateGUI();
         resetParams(settings.getWindowWidth(), settings.getWindowHeight());
         useWavefront = settings.getUseWavefront();
         initCamera();
@@ -611,9 +611,7 @@ void Tracer::runBenchmarkFromFile(std::string filename)
     // Called when scene changes
     auto resetRenderer = [&]()
     {
-        window->setSize(params.width, params.height);
         clctx->recompileKernels(false);
-        updateGUI();
         iteration = 0;
         glFinish();
         clctx->updateParams(params);
@@ -634,7 +632,7 @@ void Tracer::runBenchmarkFromFile(std::string filename)
         const std::string outputFolderBase = getUnixFolderPath(base["outputFolder"].get<std::string>(), false);
         outputFolder = isAbsolutePath(outputFolderBase) ? outputFolderBase : baseFolder + outputFolderBase;
     }
-    mkdir(outputFolder.c_str());
+    createPath(outputFolder);
 
     json scenes = base["scenes"];
 
@@ -698,8 +696,7 @@ void Tracer::runBenchmarkFromFile(std::string filename)
             return std::max(timeProgress, sppProgress);
         };
         // if maxRenderTime is 0, then render till maxSpp Condition is reached
-        // if both are given, we stop once one of them is reached (although maxSpp doesn't exit immediately due to the wavefronty nature)
-        // TODO fix that above. Should be possible!
+        // if both are given, we stop once one of them is reached (although maxSpp doesn't exit immediately due to cheks during logging only (every 0.5s))
         double currentTime = startTime;
         // Wavefront Segment Start
         if (useWavefront)

@@ -66,6 +66,7 @@ bool isAbsolutePath(const std::string filename);
 std::string getAbsolutePath(const std::string filename);
 std::string getFileName(const std::string path);
 std::string getUnixFolderPath(const std::string path, const bool isFile);
+bool createPath(const std::string& inpath);
 
 bool endsWith(const std::string s, const std::string end);
 bool endsWithAny(const std::string s, const std::vector<std::string> ends);

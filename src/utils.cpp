@@ -4,6 +4,10 @@
 #include <fstream>
 #include <iostream>
 #include <vector>
+#if defined(_WIN32)
+#include <direct.h>   // _mkdir
+#endif
+
 
 bool isAbsolutePath(const std::string filename)
 {
@@ -83,6 +87,37 @@ std::string getUnixFolderPath(const std::string path, const bool isFile)
 
     }
     return unixPath.find_last_of('/') == unixPath.size() - 1 ? unixPath : unixPath + "/";
+}
+
+bool createPath(const std::string& inpath)
+{
+    auto makeDirFun = [](const std::string& p)
+    {
+#if defined(_WIN32)
+        return _mkdir(p.c_str());
+#else
+        return mkdir(p.c_str(), 0755);
+#endif
+    };
+
+    std::string path = unixifyPath(inpath);
+    if (makeDirFun(path) == -1)
+    {
+        switch (errno)
+        {
+        case ENOENT:
+            if (createPath(path.substr(0, path.find_last_of('/'))))
+                return (makeDirFun(path) == 0);
+            else
+                return false;
+        case EEXIST:
+            return true;
+        default:
+            return false;
+        }
+    }
+
+    return true;
 }
 
 std::string openFileDialog(const std::string message, const std::string defaultPath, const std::vector<const char*> filter)
