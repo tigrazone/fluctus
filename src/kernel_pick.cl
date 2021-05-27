@@ -12,8 +12,8 @@ kernel void pick(global RenderParams *params, global Triangle *tris, global GPUN
     // Input coords in NDC-space, [0,1]x[0,1]
 
     // Screen space, [-1,1]x[-1,1]
-    float SCRx = 2.0f * NDCx - 1.0f;
-    float SCRy = 2.0f * NDCy - 1.0f;
+    float SCRx = NDCx + NDCx - 1.0f;
+    float SCRy = NDCy + NDCy - 1.0f;
 
     // Aspect ratio fix applied horizontally
     SCRx *= (float)params->width / params->height;

@@ -8,8 +8,7 @@
 
 float3 sampleIdealReflection(Hit *hit, Material *material, bool backface, global TexDescriptor *textures, global uchar *texData, float3 dirIn, float3 *dirOut, float *pdfW, uint *randSeed)
 {
-	float len = length(dirIn);
-	*dirOut = len * reflect(normalize(dirIn), hit->N);
+	*dirOut =reflect0((dirIn), hit->N);
 	*pdfW = 1.0f;
 
 	// Fresnel ignored in ideal spacular case

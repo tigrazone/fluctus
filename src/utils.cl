@@ -1,6 +1,9 @@
 #ifndef CL_UTILS
 #define CL_UTILS
 
+#define M_2PI_PI_F 19.739208802178717237668981999752f
+#define M_PI_F1 0.31830988618379067153776752674503f
+
 #include "geom.h"
 #include "random.cl"
 #include "ptx_asm.cl"
@@ -27,19 +30,31 @@ inline float3 lerp(float u, float v, float3 v1, float3 v2, float3 v3)
     return (1.0f - u - v) * v1 + u * v2 + v * v3;
 }
 
-inline float3 reflect(float3 dir, float3 n) // dir normalized?
+inline float3 reflect0(float3 dir, float3 n) // dir normalized?
 {
-    return dir - 2.0f * dot(dir, n) * n;
+    return dir - dot(dir, n) * (n+n);
 }
 
-// Wi points inwards
-inline float3 refract(float3 wi, float3 n, float eta)
+inline float3 refract0(float3 wi, float3 n, float eta)
 {
-	float iDotN = dot(-wi, n);
+	float iDotN = - dot(wi, n);
 	float sin2ThetaI = max(0.0f, 1.0f - iDotN * iDotN);
 	float sin2ThetaT = eta * eta * sin2ThetaI;
 	float cosThetaT = sqrt(max(0.0f, 1.0f - sin2ThetaT));
 	return wi * eta + n * (eta * iDotN - cosThetaT);
+}
+
+inline float3 reflect(float3 dir, float3 n, float *dott) // dir normalized?
+{
+    return dir + *dott * (n+n);
+}
+
+inline float3 refract(float3 wi, float3 n, float eta, float *iDotN)
+{
+	float sin2ThetaI = max(0.0f, 1.0f - *iDotN * *iDotN);
+	float sin2ThetaT = eta * eta * sin2ThetaI;
+	float cosThetaT = sqrt(max(0.0f, 1.0f - sin2ThetaT));
+	return wi * eta + n * (eta * *iDotN - cosThetaT);
 }
 
 inline void calcNormalSphere(global Sphere *scene, Hit *hit)
@@ -76,13 +91,20 @@ inline float2 uniformSampleDisk(uint *seed)
 {
     float sqrt_r = sqrt(rand(seed));
     float th = M_2PI_F * rand(seed);
+	
+	/*
     return (float2)(sqrt_r * cos(th), sqrt_r * sin(th));
+	*/
+	
+	float cosTh;
+	float sinTh = sincos(th, &cosTh);
+    return (float2)(sqrt_r * cosTh, sqrt_r * sinTh);
 }
 
 
 inline float3 cosSampleHemisphere(float3 n, uint *seed, float *p)
 {
-    float r1 = 2.0f * M_PI_F * rand(seed);
+    float r1 = M_2PI_F * rand(seed);
     float r2 = rand(seed);
     float r2s = sqrt(r2);
 
@@ -106,8 +128,8 @@ inline float3 cosSampleHemisphere(float3 n, uint *seed, float *p)
     w *= (sqrt(1 - r2));
 
     float3 dir = u + v + w;
-    float costh = dot(n, dir);
-    *p = costh / M_PI_F; //pdf
+	
+    *p = dot(n, dir) * M_PI_F1; //pdf
 	return dir;
 }
 
@@ -153,7 +175,7 @@ inline float3 tangentSpaceNormal(Hit hit, global Triangle *tris, const Material 
     
     const float3 defaultVal = (float3)(0.5f, 0.5f, 1.0f); // flat surface
     float3 texNormal = matGetFloat3(defaultVal, hit.uvTex, mat.map_N, textures, texData);
-    texNormal = 2.0f * texNormal - (float3)(1.0f, 1.0f, 1.0f);
+    texNormal = texNormal + texNormal - (float3)(1.0f, 1.0f, 1.0f);
     
     Triangle t = tris[hit.i];
     
@@ -169,8 +191,8 @@ inline float3 tangentSpaceNormal(Hit hit, global Triangle *tris, const Material 
 
     // Compute T, B using inverse of [t1.x t1.y; t2.x t2.y]
     float invDet = 1.0f / det;
-    float3 T = normalize(invDet * (e1 * t2.y - e2 * t1.y));
-    float3 B = normalize(invDet * (e2 * t1.x - e1 * t2.x));
+    float3 T = (invDet * (e1 * t2.y - e2 * t1.y));
+    float3 B = (invDet * (e2 * t1.x - e1 * t2.x));
 
     // Expanded matrix multiply M * hit.N
     float3 N;
@@ -178,7 +200,7 @@ inline float3 tangentSpaceNormal(Hit hit, global Triangle *tris, const Material 
     N.y = T.y*texNormal.x + B.y*texNormal.y + hit.N.y*texNormal.z;
     N.z = T.z*texNormal.x + B.z*texNormal.y + hit.N.z*texNormal.z;
 
-    return normalize(N);
+    return (N);
 }
 
 // Read all material parameters at once
@@ -227,10 +249,10 @@ inline void sampleAreaLight(AreaLight light, float *pdf, float3 *p, uint *seed)
 {
 	*pdf = 1.0f / (4.0f * light.size.x * light.size.y);
 	*p = light.pos;
-	float r1 = 2.0f * rand(seed) - 1.0f;
-	float r2 = 2.0f * rand(seed) - 1.0f;
-	*p += r1 * light.size.x * light.right;
-	*p += r2 * light.size.y * light.up;
+	float r1 = rand(seed);
+	float r2 = rand(seed);
+	*p += (r1 + r1 - 1.0f) * light.size.x * light.right;
+	*p += (r2 + r2 - 1.0f) * light.size.y * light.up;
 }
 
 // sRGB luminance

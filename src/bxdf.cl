@@ -40,7 +40,7 @@ Spectrum bxdfSample(
 		case BXDF_IDEAL_DIELECTRIC:
 			return sampleIdealDielectric(hit, material, backface, textures, texData, dirIn, dirOut, pdfW, randSeed);
 		case BXDF_EMISSIVE:
-			return (float3)(1.0f, 1.0f, 1.0f);
+			return material->Ke;
 	}
 
 	return (float3)(0.0f, 0.0f, 0.0f);
@@ -71,7 +71,7 @@ Spectrum bxdfEval(
 		case BXDF_IDEAL_DIELECTRIC:
 			return evalIdealDielectric();
 		case BXDF_EMISSIVE:
-			return (float3)(1.0f, 1.0f, 1.0f);
+			return material->Ke;
 	}
 	
 	return (float3)(0.0f, 0.0f, 0.0f);

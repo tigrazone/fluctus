@@ -8,6 +8,9 @@ typedef char cl_uchar;
 typedef bool cl_bool;
 typedef float2 vfloat2;
 typedef float3 vfloat3;
+
+#define one2_2 (0.454545454545454545f)
+
 #else
 #include "cl2.hpp"
 #include "math/float2.hpp"

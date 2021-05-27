@@ -131,7 +131,7 @@ kernel void logic(
 		if (params->sampleExpl && len > 1 && !lastSpecular) // not very direct + MIS needed
 		{
 			const float directPdfA = 1.0f / (4.0f * params->areaLight.size.x * params->areaLight.size.y);
-			const float directPdfW = pdfAtoW(directPdfA, length(hit.P - r.orig), dot(normalize(-r.dir), hit.N)); // normal of light
+			const float directPdfW = pdfAtoW(directPdfA, length(hit.P - r.orig), - dot(normalize(r.dir), hit.N)); // normal of light
 			const float lightPickProb = ReadF32(lastLightPickProb, tasks);
 			const float lastPdfW = ReadF32(lastPdfW, tasks);
 			misWeight = lastPdfW / (lastPdfW + directPdfW * lightPickProb);
@@ -157,15 +157,23 @@ kernel void logic(
         const float bsdfPdfW = ReadF32(lastPdfImplicit, tasks);
         const float lightPickProb = ReadF32(lastLightPickProb, tasks);
 
+
+        const float3 T = ReadFloat3(lastT, tasks);
+		float3 contrib;
+		
+
         // Only do MIS weighting if other samplers (bsdf-sampling) could have generated the sample
         float weight = 1.0f;
         if (params->sampleImpl)
         {
-            weight = (directPdfW * lightPickProb) / (directPdfW * lightPickProb + bsdfPdfW);
+			const float weightProb = directPdfW * lightPickProb;
+            weight = weightProb / (weightProb + bsdfPdfW);
+			
+			contrib = bsdf * T * emission * weight * cosTh / weightProb;
         }
-
-        const float3 T = ReadFloat3(lastT, tasks);
-        const float3 contrib = bsdf * T * emission * weight * cosTh / (lightPickProb * directPdfW);
+		else {
+			contrib = bsdf * T * emission * weight * cosTh / (directPdfW * lightPickProb);
+		}
         const float3 newEi = ReadFloat3(Ei, tasks) + contrib;
         WriteFloat3(Ei, tasks, newEi);
     }
@@ -267,8 +275,8 @@ kernel void logic(
             sampleEnvMapAlias(rand(&seed), &L, &directPdfW, ctx);
 
             // Shadow ray
-            float lenL = 2.0f * params->worldRadius;
-            L = normalize(L);
+            float lenL = params->worldRadius + params->worldRadius;
+            //L = normalize(L);
 
             float cosTh = max(0.0f, dot(L, hit.N));
             float3 envMapLi = evalEnvMapDir(envMap, L) * params->envMapStrength;
@@ -302,7 +310,7 @@ kernel void logic(
             // Shadow ray
             float3 L = posL - orig;
             float lenL = length(L) * 0.995f; // don't intersect with emitter itself
-            L = normalize(L);
+            L = normalize(L); //tigra: dont remove normalize
 
             float cosLight = max(dot(params->areaLight.N, -L), 0.0f);
             

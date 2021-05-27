@@ -39,8 +39,8 @@ kernel void genRays(
     float NDCy = y / params->height;
 
     // Screen space, [-1,1]x[-1,1]
-    float SCRx = 2.0f * NDCx - 1.0f;
-    float SCRy = 2.0f * NDCy - 1.0f;
+    float SCRx = NDCx + NDCx - 1.0f;
+    float SCRy = NDCy + NDCy - 1.0f;
 
     // Aspect ratio fix applied horizontally
     SCRx *= (float)params->width / params->height;
@@ -87,7 +87,7 @@ kernel void genRays(
     WriteF32(lastPdfImplicit, tasks, 0.0f);
     WriteF32(lastCosTh, tasks, 0.0f);
     WriteF32(lastLightPickProb, tasks, 1.0f);
-    WriteF32(shadowRayLen, tasks, 2.0f * params->worldRadius);
+    WriteF32(shadowRayLen, tasks, params->worldRadius + params->worldRadius);
     WriteU32(backfaceHit, tasks, 0);
     WriteU32(shadowRayBlocked, tasks, 1);
     WriteFloat3(lastEmission, tasks, zero);

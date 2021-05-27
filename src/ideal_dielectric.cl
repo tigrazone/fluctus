@@ -9,10 +9,9 @@
 
 float3 sampleIdealDielectric(Hit *hit, Material *material, bool backface, global TexDescriptor *textures, global uchar *texData, float3 dirIn, float3 *dirOut, float *pdfW, uint *randSeed)
 {
-	float raylen = length(dirIn);
 	float3 bsdf = (float3)(1.0f, 1.0f, 1.0f);
 
-	float cosI = dot(normalize(-dirIn), hit->N);
+	float cosI = - dot(normalize(dirIn), hit->N);
 	float n1 = 1.0f, n2 = material->Ni;
 	if (backface) swap_m(n1, n2, float); // inside of material
 	float eta = n1 / n2;
@@ -22,12 +21,12 @@ float3 sampleIdealDielectric(Hit *hit, Material *material, bool backface, global
 	if (rand(randSeed) < fr)
 	{
 		// Reflection
-		*dirOut = raylen * reflect(normalize(dirIn), hit->N);
+		*dirOut = reflect((dirIn), hit->N, &cosI);
 	}
 	else
 	{
 		// Refraction
-		*dirOut = raylen * refract(normalize(dirIn), hit->N, eta);
+		*dirOut = refract((dirIn), hit->N, eta, &cosI);
 		bsdf *= eta * eta; // eta^2 applied in case of radiance transport (16.1.3)
 		
 		// Simulate absorption

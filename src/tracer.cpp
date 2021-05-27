@@ -1328,8 +1328,7 @@ void Tracer::pollKeys(float deltaT)
     check(GLFW_KEY_D,           cam.pos += deltaT * cameraSpeed * 10 * cam.right);
     check(GLFW_KEY_R,           cam.pos += deltaT * cameraSpeed * 10 * cam.up);
     check(GLFW_KEY_F,           cam.pos -= deltaT * cameraSpeed * 10 * cam.up);
-    check(GLFW_KEY_E,           cam.pos += deltaT * cameraSpeed * 10 * cam.up);
-    check(GLFW_KEY_Q,           cam.pos -= deltaT * cameraSpeed * 10 * cam.up);
+	
     check(GLFW_KEY_UP,          cameraRotation.y -= 75 * deltaT);
     check(GLFW_KEY_DOWN,        cameraRotation.y += 75 * deltaT);
     check(GLFW_KEY_LEFT,        cameraRotation.x -= 75 * deltaT);

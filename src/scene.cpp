@@ -311,6 +311,32 @@ void Scene::loadObjWithMaterials(const std::string filePath, ProgressView *progr
         m.map_Ks = tryImportTexture(unixifyPath(folderPath + t_mat.specular_texname), unixifyPath(t_mat.specular_texname));
         m.map_N = tryImportTexture(unixifyPath(folderPath + t_mat.bump_texname), unixifyPath(t_mat.bump_texname)); // map_bump in mtl treated as normal map
         m.type = parseShaderType(t_mat.unknown_parameter["shader"]);
+		
+		float sum_kd = m.Kd[0] + m.Kd[1] + m.Kd[2];
+		float sum_ks = m.Ks[0] + m.Ks[1] + m.Ks[2];
+		float sum_kt = t_mat.transmittance[0] +t_mat.transmittance[1] + t_mat.transmittance[2];
+		
+		char components = 0;
+		components += (sum_kd > 0.0f);
+		components += (sum_ks > 0.0f);
+		components += (sum_kt > 0.0f);
+		
+		if(components > 1 && 0) {
+			m.type = BXDF_MIXED;
+		}
+		
+		if(m.type == BXDF_DIFFUSE && sum_kt>0.0f && sum_kd<0.00000001f) {
+			m.type = BXDF_IDEAL_DIELECTRIC;
+			m.Ks = fr::float3(t_mat.transmittance[0], t_mat.transmittance[1], t_mat.transmittance[2]);
+		}
+		
+		if(m.type == BXDF_DIFFUSE && sum_ks>0.0f && sum_kd<0.00000001f) {
+			m.type = BXDF_GLOSSY;
+		}
+		
+		if(m.Ke[0]>0.0f || m.Ke[1]>0.0f || m.Ke[2]>0.0f) {
+			m.type = BXDF_EMISSIVE;
+		}
 
         materials.push_back(m);
         materialTypes |= m.type;

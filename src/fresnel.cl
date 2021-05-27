@@ -11,10 +11,22 @@ inline float fresnelDielectric(float cosThI, float etaI, float etaT)
 	if (sinThetaT >= 1.0f)
 		return 1.0f;
 
+	/*
 	float parl = ((etaT * cosThI) - (etaI * cosThetaT)) /
 				 ((etaT * cosThI) + (etaI * cosThetaT));
+	
 	float perp = ((etaI * cosThI) - (etaT * cosThetaT)) /
 				 ((etaI * cosThI) + (etaT * cosThetaT));
+	*/
+	
+	//8* vs 4*
+	float etaT_cosThI = etaT * cosThI;			 
+	float etaI_cosThetaT = etaI * cosThetaT;
+	float parl = (etaT_cosThI - etaI_cosThetaT) / (etaT_cosThI + etaI_cosThetaT);
+				 
+	float etaI_cosThI = etaI * cosThI;			 
+	float etaT_cosThetaT = etaT * cosThetaT;
+	float perp = (etaI_cosThI - etaT_cosThetaT) / (etaI_cosThI + etaT_cosThetaT);
 	
 	return 0.5f * (parl * parl + perp * perp);
 }

@@ -16,9 +16,9 @@ inline float2 directionToUV(float3 dir)
     if (dir.x == 0.0f && dir.y == 0.0f && dir.z == 0.0f)
         return (float2)(0.0f, 0.0f);
 
-    float u = 1.0f + atan2(dir.x, -dir.z) / M_PI_F;
+    float u = 1.0f + atan2(dir.x, -dir.z) * M_PI_F1;
     float r = clamp(dir.y / length(dir), -1.0f, 1.0f);
-    float v = acos(r) / M_PI_F;
+    float v = acos(r) * M_PI_F1;
 
     return (float2)(u * 0.5f, v);
 }
@@ -28,11 +28,14 @@ inline float2 directionToUV(float3 dir)
 inline float3 UVToDirection(float u, float v)
 {
     float phi = v * M_PI_F;
-    float theta = (u * 2.0f - 1.0f) * M_PI_F;
-    float sinPhi = sin(phi);
-    float cosPhi = cos(phi);
-    float sinTh = sin(theta);
-    float cosTh = cos(theta);
+    float theta = (u + u - 1.0f) * M_PI_F;
+	
+    float cosPhi, cosTh;	
+	
+    float sinPhi = sincos(phi, &cosPhi);
+	
+    float sinTh = sincos(theta, &cosTh);
+	
     return (float3)(sinPhi*sinTh, cosPhi, -sinPhi*cosTh);
 }
 
@@ -86,7 +89,7 @@ inline void sampleEnvMapAlias(float rnd, float3 *L, float *pdfW, EnvMapContext c
     float sinTh = sin(M_PI_F * v);
     float directPdfUV = pdf_uv * lightPickProb;
     if (sinTh != 0.0f)
-        *pdfW = directPdfUV / (2.0f * M_PI_F * M_PI_F * sinTh);
+        *pdfW = directPdfUV / (M_2PI_PI_F * sinTh);
     else
         *pdfW = 0.0f;
 }
@@ -103,5 +106,5 @@ float envMapPdf(int width, int height, global float *pdfTable, float3 direction)
     int iu = min((int)floor(uv.x * width), width - 1);
     int iv = min((int)floor(uv.y * height), height - 1);
 
-    return pdfTable[iv * width + iu] / (M_2PI_F * M_PI_F * sinTh);
+    return pdfTable[iv * width + iu] / (M_2PI_PI_F * sinTh);
 }

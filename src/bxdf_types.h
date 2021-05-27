@@ -8,6 +8,7 @@
 #define BXDF_GGX_ROUGH_DIELECTRIC   (1 << 5)
 #define BXDF_IDEAL_DIELECTRIC       (1 << 6)
 #define BXDF_EMISSIVE               (1 << 7)
+#define BXDF_MIXED               	(1 << 8)
 #define BXDF_IS_SINGULAR(t) ((t & (BXDF_IDEAL_REFLECTION | BXDF_IDEAL_DIELECTRIC)) != 0)
 
 #endif

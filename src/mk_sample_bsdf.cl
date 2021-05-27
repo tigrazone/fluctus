@@ -82,8 +82,8 @@ kernel void sampleBsdf(
             sampleEnvMapAlias(rand(&seed), &L, &directPdfW, ctx);
 
             // Shadow ray
-            float lenL = 2.0f * params->worldRadius;
-            L = normalize(L);
+            float lenL = params->worldRadius + params->worldRadius;
+            // L = normalize(L);
             Ray rLight = { orig, L };
 
             // TODO: BAD! Collect all shadow ray casts together (in queue, i.e. buffer of gids + atomic counter)!
@@ -99,15 +99,23 @@ kernel void sampleBsdf(
                 float cosTh = max(0.0f, dot(L, hit.N)); // cos at surface
                 float bsdfPdfW = max(0.0f, bxdfPdf(&hit, &mat, backface, textures, texData, r.dir, L));
 
-                float weight = 1.0f;
-                if (params->sampleImpl)
-                {
-                    weight = (directPdfW * lightPickProb) / (directPdfW * lightPickProb + bsdfPdfW);
-                }
-
                 const float3 T = ReadFloat3(T, tasks);
                 const float3 envMapLi = evalEnvMapDir(envMap, L) * params->envMapStrength;
-                const float3 contrib = brdf * T * envMapLi * weight * cosTh / (lightPickProb * directPdfW);
+
+                float weight = 1.0f;
+				
+				float3 contrib;
+				
+                if (params->sampleImpl)
+                {
+                    const float weightProb = lightPickProb * directPdfW;
+			
+					weight = (weightProb) / (weightProb + bsdfPdfW);
+					
+                    contrib = brdf * T * envMapLi * weight * cosTh / (weightProb);
+                } else {
+					contrib = brdf * T * envMapLi * weight * cosTh / (lightPickProb * directPdfW);
+				}
                 const float3 newEi = ReadFloat3(Ei, tasks) + contrib;
                 WriteFloat3(Ei, tasks, newEi);
             }
@@ -124,7 +132,7 @@ kernel void sampleBsdf(
             // Shadow ray
             float3 L = posL - orig;
             float lenL = length(L);
-            L = normalize(L);
+            L /= lenL; //tigra: dont remove normalize
             Ray rLight = { orig, L };
 
             // TODO: BAD! Collect all shadow ray casts together (in queue, i.e. buffer of gids + atomic counter)!
@@ -141,13 +149,18 @@ kernel void sampleBsdf(
                 float bsdfPdfW = max(0.0f, bxdfPdf(&hit, &mat, backface, textures, texData, r.dir, L));
 
                 float weight = 1.0f;
+				float3 contrib;
+                const float3 T = ReadFloat3(T, tasks);
+				
                 if (params->sampleImpl)
                 {
-                    weight = (directPdfW * lightPickProb) / (directPdfW * lightPickProb + bsdfPdfW);
-                }
-
-                const float3 T = ReadFloat3(T, tasks);
-                const float3 contrib = brdf * T * params->areaLight.E * weight * cosTh / (lightPickProb * directPdfW);
+                    const float weightProb = lightPickProb * directPdfW;
+                    weight = (weightProb) / (weightProb + bsdfPdfW);
+					contrib = brdf * T * params->areaLight.E * weight * cosTh / (weightProb);
+                } else {
+					contrib = brdf * T * params->areaLight.E * weight * cosTh / (lightPickProb * directPdfW);
+				}
+	
                 const float3 newEi = ReadFloat3(Ei, tasks) + contrib;
                 WriteFloat3(Ei, tasks, newEi);
             }
@@ -169,7 +182,6 @@ kernel void sampleBsdf(
     float pdfW;
     float3 newDir;
     float3 bsdf = bxdfSample(&hit, &mat, backface, textures, texData, r.dir, &newDir, &pdfW, &seed);
-    float costh = dot(hit.N, normalize(newDir));
 
 	// Compensate for RR
 	pdfW *= contProb;
@@ -179,7 +191,7 @@ kernel void sampleBsdf(
 		terminate = true;
 	
     // Update throughput * pdf
-	float3 newT = ReadFloat3(T, tasks) * bsdf * costh / pdfW;
+	float3 newT = ReadFloat3(T, tasks) * bsdf * dot(hit.N, (newDir)) / pdfW;
         
     // Avoid self-shadowing
     orig = hit.P + 1e-4f * newDir;

@@ -41,7 +41,7 @@ kernel void process(
 
     // Gamma correction
     if (par.tmOperator != 3)
-        color.xyz = pow(color.xyz, 1.0f / 2.2f);
+        color.xyz = pow(color.xyz, one2_2);
     
     // Output color
     vstore4(color, gid, pixelsPreview);

@@ -39,7 +39,6 @@ kernel void wavefrontDiffuse(
     float pdfW;
     float3 newDir;
     float3 bsdf = bxdfSample(&hit, &mat, backface, textures, texData, dirIn, &newDir, &pdfW, &seed);
-    float costh = dot(hit.N, normalize(newDir));
 	
     // Update throughput * pdf
 	const float3 oldT = ReadFloat3(T, tasks);
@@ -47,7 +46,7 @@ kernel void wavefrontDiffuse(
     if (pdfW == 0.0f || isZero(bsdf))
 		newT = (float3)(0.0f, 0.0f, 0.0f);
     else
-        newT = oldT * bsdf * costh / pdfW;
+        newT = oldT * bsdf * dot(hit.N, (newDir)) / pdfW;
         
     // Avoid self-shadowing
     float3 orig = hit.P + 1e-4f * newDir;

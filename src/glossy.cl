@@ -35,7 +35,7 @@ float3 sampleGlossy(Hit *hit, Material *mat, bool backface, global TexDescriptor
 	if (isZero(m.Ks)) m.Ks = etaToKs(m.Ni);
 
 	// Choose between materials based on fresnel
-	float cosTh = dot(normalize(-dirIn), hit->N);
+	float cosTh = - dot(normalize(dirIn), hit->N);
 	float F = fresnelDielectric(cosTh, 1.0f, m.Ni);
 	
 	float basePdf, coatingPdf;
@@ -78,7 +78,7 @@ float3 evalGlossy(Hit *hit, Material *mat, bool backface, global TexDescriptor *
 	float3 baseBrdf = evalDiffuse(hit, &m, textures, texData, dirIn, dirOut);
 	float3 coatingBrdf = evalGGXReflect(hit, &m, textures, texData, dirIn, dirOut);
 
-	float cosTh = dot(normalize(-dirIn), hit->N);
+	float cosTh = - dot(normalize(dirIn), hit->N);
 	float F = fresnelDielectric(cosTh, 1.0f, m.Ni);
 	return (baseBrdf * (1 - F) + coatingBrdf); // coatingBrdf contains F
 }
@@ -95,7 +95,7 @@ float pdfGlossy(Hit *hit, Material *mat, global TexDescriptor *textures, global 
 	float basePdf = pdfDiffuse(hit, dirOut);
 	float coatingPdf = pdfGGXReflect(hit, mat, dirIn, dirOut); // Ni and Ks don't affect
 
-	float cosTh = dot(normalize(-dirIn), hit->N);
+	float cosTh = - dot(normalize(dirIn), hit->N);
 	float F = fresnelDielectric(cosTh, 1.0f, Ni);
 	return (1 - F) * basePdf + F * coatingPdf;
 }
