@@ -1,6 +1,9 @@
 *.png
 *.csv
+*.exe
+*.dll
 assets/
+ext_build/
 hierarchies/
 data/states/
 data/kernel_binaries/
@@ -14,3 +17,4 @@ fluctus.VC.VC.opendb
 fluctus.VC.db
 fluctus.vcxproj.filters
 fluctus.vcxproj.user
+bench.txt

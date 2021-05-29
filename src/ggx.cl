@@ -101,7 +101,7 @@ float3 sampleGGXReflect(Hit *hit, Material *mat, global TexDescriptor *textures,
 	*pdfW = ggxPdfReflect(alpha, *dirOut, hit->N, H);
 
 	// TODO: Fresnel should be applied implicitly in case of layered material
-	float iDotN = -dot(dirIn, hit->N);
+	float iDotN = - dot(dirIn, hit->N);
 	float oDotN = dot(*dirOut, hit->N);
 	float F = (mat->Ni > 1.0f) ? fresnelDielectric(iDotN, 1.0f, mat->Ni) : 1.0f;
 
@@ -197,7 +197,7 @@ float3 sampleGGXRefract(Hit *hit, Material *mat, bool backface, global TexDescri
 		float3 Ks = matGetFloat3(mat->Ks, hit->uvTex, mat->map_Ks, textures, texData);
 		bsdf *= Ks;
 
-		float iDotH = fabs(- dot(normalize(dirIn), H));
+		float iDotH = fabs(dot(normalize(dirIn), H));
 		float oDotH = fabs(dot(*dirOut, H));
 		float oDotN = dot(*dirOut, hit->N);
 
@@ -251,7 +251,7 @@ float3 evalGGXRefract(Hit *hit, Material *mat, bool backface, global TexDescript
 		float3 Ks = matGetFloat3(mat->Ks, hit->uvTex, mat->map_Ks, textures, texData);
 		bsdf *= Ks;
 
-		float iDotH = fabs(- dot(normalize(dirIn), H));
+		float iDotH = fabs(dot(normalize(dirIn), H));
 		float oDotH = fabs(dot(normalize(dirOut), H));
 
 		// Focus term (eq. 21)
