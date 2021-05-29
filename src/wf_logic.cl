@@ -131,7 +131,7 @@ kernel void logic(
 		if (params->sampleExpl && len > 1 && !lastSpecular) // not very direct + MIS needed
 		{
 			const float directPdfA = 1.0f / (4.0f * params->areaLight.size.x * params->areaLight.size.y);
-			const float directPdfW = pdfAtoW(directPdfA, length(hit.P - r.orig), - dot(normalize(r.dir), hit.N)); // normal of light
+			const float directPdfW = pdfAtoW(directPdfA, length(hit.P - r.orig), - dot((r.dir), hit.N)); // normal of light
 			const float lightPickProb = ReadF32(lastLightPickProb, tasks);
 			const float lastPdfW = ReadF32(lastPdfW, tasks);
 			misWeight = lastPdfW / (lastPdfW + directPdfW * lightPickProb);
@@ -309,8 +309,9 @@ kernel void logic(
 
             // Shadow ray
             float3 L = posL - orig;
-            float lenL = length(L) * 0.995f; // don't intersect with emitter itself
-            L = normalize(L); //tigra: dont remove normalize
+            float lenL0 = length(L);
+            float lenL = lenL0 * 0.995f; // don't intersect with emitter itself
+            L /= lenL0; //tigra: dont remove normalize
 
             float cosLight = max(dot(params->areaLight.N, -L), 0.0f);
             

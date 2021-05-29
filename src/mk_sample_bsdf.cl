@@ -83,7 +83,7 @@ kernel void sampleBsdf(
 
             // Shadow ray
             float lenL = params->worldRadius + params->worldRadius;
-            // L = normalize(L);
+            //L = normalize(L);
             Ray rLight = { orig, L };
 
             // TODO: BAD! Collect all shadow ray casts together (in queue, i.e. buffer of gids + atomic counter)!
@@ -132,7 +132,7 @@ kernel void sampleBsdf(
             // Shadow ray
             float3 L = posL - orig;
             float lenL = length(L);
-            L /= lenL; //tigra: dont remove normalize
+            L *= lenL; //tigra: dont remove normalize
             Ray rLight = { orig, L };
 
             // TODO: BAD! Collect all shadow ray casts together (in queue, i.e. buffer of gids + atomic counter)!

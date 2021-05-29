@@ -39,7 +39,7 @@ float3 sampleIdealDielectric(Hit *hit, Material *material, bool backface, global
 
 	// PBRT eq. 8.8
 	// cosTh of geometry term needs to be cancelled out
-	float cosO = dot(normalize(*dirOut), hit->N);
+	float cosO = dot((*dirOut), hit->N);
 	return bsdf / cosO;
 }
 

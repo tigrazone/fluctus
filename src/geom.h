@@ -10,6 +10,7 @@ typedef float2 vfloat2;
 typedef float3 vfloat3;
 
 #define one2_2 (0.454545454545454545f)
+#define one_255 (0.003921568627451f)
 
 #else
 #include "cl2.hpp"

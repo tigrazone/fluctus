@@ -93,22 +93,24 @@ float3 sampleGGXReflect(Hit *hit, Material *mat, global TexDescriptor *textures,
 	// Setup parameters
 	float alpha = toRoughness(mat->Ns);
 	
+	float3 dirInN = -dirIn;
+	
 	// Importance sample GGX lobe
-	float3 H = ggxSampleLobe(alpha, -dirIn, hit->N, seed);
+	float3 H = ggxSampleLobe(alpha, dirInN, hit->N, seed);
 	*dirOut = reflect0(dirIn, H);
 
 	// Output pdf
 	*pdfW = ggxPdfReflect(alpha, *dirOut, hit->N, H);
 
 	// TODO: Fresnel should be applied implicitly in case of layered material
-	float iDotN = - dot(dirIn, hit->N);
+	float iDotN = dot(dirInN, hit->N);
 	float oDotN = dot(*dirOut, hit->N);
 	float F = (mat->Ni > 1.0f) ? fresnelDielectric(iDotN, 1.0f, mat->Ni) : 1.0f;
 
 	// Evaluate BSDF (eq. 20)
 	float3 Ks = matGetFloat3(mat->Ks, hit->uvTex, mat->map_Ks, textures, texData);
 	float D = ggxD(alpha, hit->N, H);
-	float G = ggxG(alpha, -dirIn, *dirOut, hit->N, H);
+	float G = ggxG(alpha, dirInN, *dirOut, hit->N, H);
 	float den = (4.0f * iDotN * oDotN);
 	return (den != 0.0f) ? (Ks * F * G * D / den) : (float3)(0.0f, 0.0f, 0.0f);
 }
@@ -117,19 +119,20 @@ float3 evalGGXReflect(Hit *hit, Material *mat, global TexDescriptor *textures, g
 {
 	// Setup parameters
 	float alpha = toRoughness(mat->Ns);
+	float3 dirInN = -dirIn;
 	
 	// Calculate halfway vector
 	float3 H = normalize(dirOut - dirIn);
 
 	// TODO: Fresnel should be applied implicitly in case of layered material
-	float iDotN = - dot(dirIn, hit->N);
+	float iDotN = dot(dirInN, hit->N);
 	float oDotN = dot(dirOut, hit->N);
 	float F = (mat->Ni > 1.0f) ? fresnelDielectric(iDotN, 1.0f, mat->Ni) : 1.0f;
 
 	// Evaluate BSDF (eq. 20)
 	float3 Ks = matGetFloat3(mat->Ks, hit->uvTex, mat->map_Ks, textures, texData);
 	float D = ggxD(alpha, hit->N, H);
-	float G = ggxG(alpha, -dirIn, dirOut, hit->N, H);
+	float G = ggxG(alpha, dirInN, dirOut, hit->N, H);
 	float den = (4.0f * iDotN * oDotN);
 	return (den != 0.0f) ? (Ks * F * G * D / den) : (float3)(0.0f, 0.0f, 0.0f);
 }
@@ -154,14 +157,16 @@ float ggxPdfRefract(float alpha, float etaI, float etaO, float3 dirIn, float3 di
 float3 sampleGGXRefract(Hit *hit, Material *mat, bool backface, global TexDescriptor *textures, global uchar *texData, float3 dirIn, float3 *dirOut, float *pdfW, uint *seed)
 {
 	// Setup parameters
+	
+	float3 dirInN = -dirIn;
 
 	float alpha = toRoughness(mat->Ns);
 	float etaI = 1.0f, etaO = mat->Ni; // assume air-dielectric interface
 	if (backface) swap_m(etaI, etaO, float);
-	float iDotN = - dot(normalize(dirIn), hit->N);
+	float iDotN = dot((dirInN), hit->N);
 	
 	// Importance sample GGX lobe
-	float3 H = ggxSampleLobe(alpha, -dirIn, hit->N, seed);
+	float3 H = ggxSampleLobe(alpha, dirInN, hit->N, seed);
 
 	// Importance sample refrection and refraction based on Fresnel term
 	float F = fresnelDielectric(iDotN, etaI, etaO);
@@ -175,7 +180,7 @@ float3 sampleGGXRefract(Hit *hit, Material *mat, bool backface, global TexDescri
 		// White reflections (Ks only for sim. absorption)
 		float oDotN = dot(*dirOut, hit->N);
 		float D = ggxD(alpha, hit->N, H);
-		float G = ggxG(alpha, -dirIn, *dirOut, hit->N, H);
+		float G = ggxG(alpha, dirInN, *dirOut, hit->N, H);
 		float den = (4.0f * iDotN * oDotN);
 		return (den != 0.0f) ? (F * G * D / den) : 0.0f;
 	}
@@ -187,7 +192,7 @@ float3 sampleGGXRefract(Hit *hit, Material *mat, bool backface, global TexDescri
 
 		// Recalculate H (eq. 16)
 		H = normalize((dirIn * etaI - *dirOut * etaO));
-		*pdfW = ggxPdfRefract(alpha, etaI, etaO, -dirIn, *dirOut, ((backface) ? -hit->N : hit->N), H);
+		*pdfW = ggxPdfRefract(alpha, etaI, etaO, dirInN, *dirOut, ((backface) ? -hit->N : hit->N), H);
 
 		// eta^2 applied in case of radiance transport (16.1.3)
 		const bool lightTracing = false;
@@ -197,7 +202,7 @@ float3 sampleGGXRefract(Hit *hit, Material *mat, bool backface, global TexDescri
 		float3 Ks = matGetFloat3(mat->Ks, hit->uvTex, mat->map_Ks, textures, texData);
 		bsdf *= Ks;
 
-		float iDotH = fabs(dot(normalize(dirIn), H));
+		float iDotH = fabs(dot((dirIn), H));
 		float oDotH = fabs(dot(*dirOut, H));
 		float oDotN = dot(*dirOut, hit->N);
 
@@ -210,7 +215,7 @@ float3 sampleGGXRefract(Hit *hit, Material *mat, bool backface, global TexDescri
 	
 		// Evaluate BSDF
 		float D = ggxD(alpha, ((backface) ? -hit->N : hit->N), H);
-		float G = ggxG(alpha, -dirIn, *dirOut, ((backface) ? -hit->N : hit->N), H);
+		float G = ggxG(alpha, dirInN, *dirOut, ((backface) ? -hit->N : hit->N), H);
 		return (1.0f - F) * bsdf * D * G * focusTerm;
 	}
 }
@@ -218,12 +223,13 @@ float3 sampleGGXRefract(Hit *hit, Material *mat, bool backface, global TexDescri
 float3 evalGGXRefract(Hit *hit, Material *mat, bool backface, global TexDescriptor *textures, global uchar *texData, float3 dirIn, float3 dirOut)
 {
 	// Setup parameters
+	float3 dirInN = -dirIn;
 
 	float alpha = toRoughness(mat->Ns);
 	float etaI = 1.0f, etaO = mat->Ni; // assume air-dielectric interface
 	if (backface) swap_m(etaI, etaO, float);
-	float iDotN = - dot(normalize(dirIn), hit->N);
-	float oDotN = dot(normalize(dirOut), hit->N);
+	float iDotN = dot((dirInN), hit->N);
+	float oDotN = dot((dirOut), hit->N);
 	float F = fresnelDielectric(iDotN, etaI, etaO);
 	
 	if (!backface)
@@ -233,7 +239,7 @@ float3 evalGGXRefract(Hit *hit, Material *mat, bool backface, global TexDescript
 		// White reflections (Ks only for sim. absorption)
 		float3 H = normalize(dirOut - dirIn);
 		float D = ggxD(alpha, hit->N, H);
-		float G = ggxG(alpha, -dirIn, dirOut, hit->N, H);
+		float G = ggxG(alpha, dirInN, dirOut, hit->N, H);
 		float den = (4.0f * iDotN * oDotN);
 		return (den != 0.0f) ? (F * G * D / den) : (float3)(0.0f, 0.0f, 0.0f);
 	}
@@ -251,8 +257,8 @@ float3 evalGGXRefract(Hit *hit, Material *mat, bool backface, global TexDescript
 		float3 Ks = matGetFloat3(mat->Ks, hit->uvTex, mat->map_Ks, textures, texData);
 		bsdf *= Ks;
 
-		float iDotH = fabs(dot(normalize(dirIn), H));
-		float oDotH = fabs(dot(normalize(dirOut), H));
+		float iDotH = fabs(dot((dirIn), H));
+		float oDotH = fabs(dot((dirOut), H));
 
 		// Focus term (eq. 21)
 		float focusTermDenom = iDotN * oDotN * (etaI * iDotH + etaO * oDotH) * (etaI * iDotH + etaO * oDotH);
@@ -263,7 +269,7 @@ float3 evalGGXRefract(Hit *hit, Material *mat, bool backface, global TexDescript
 	
 		// Evaluate BSDF
 		float D = ggxD(alpha, -hit->N, H);
-		float G = ggxG(alpha, -dirIn, dirOut, -hit->N, H);
+		float G = ggxG(alpha, dirInN, dirOut, -hit->N, H);
 		return (1.0f - F) * bsdf * D * G * focusTerm;
 	}
 }

@@ -146,7 +146,7 @@ inline float3 readTexture(float2 uvTex, TexDescriptor tex, global uchar *data)
     int2 coords = getTexelCoords(uvTex, tex.width, tex.height);
     global uchar *pix = data + tex.offset + coords.x * 4 + coords.y * tex.width * 4;
     float3 c = (float3)(*(pix + 0), *(pix + 1), *(pix + 2));
-	c /= 255.0f;
+	c *= one_255;
 	
     return c;
 }
