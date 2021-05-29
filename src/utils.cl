@@ -1,9 +1,6 @@
 #ifndef CL_UTILS
 #define CL_UTILS
 
-#define M_2PI_PI_F 19.739208802178717237668981999752f
-#define M_PI_F1 0.31830988618379067153776752674503f
-
 #include "geom.h"
 #include "random.cl"
 #include "ptx_asm.cl"
@@ -129,7 +126,7 @@ inline float3 cosSampleHemisphere(float3 n, uint *seed, float *p)
 
     float3 dir = u + v + w;
 	
-    *p = dot(n, dir) * M_PI_F1; //pdf
+    *p = dot(n, dir) * M_INV_PI; //pdf
 	return dir;
 }
 

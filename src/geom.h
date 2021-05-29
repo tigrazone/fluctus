@@ -23,6 +23,8 @@ typedef FireRays::float2 vfloat2;
 #define PI (3.14159265358979323846f)
 #define M_INV_PI (0.3183098861837907f)
 #define M_2PI_F (6.2831853071795864f)
+#define M_2PI_PI_F (19.739208802178717237668981999752f)
+
 #define toRad(deg) (deg * PI / 180)
 #define toDeg(rad) (rad * 180 / PI)
 // Path Length for RR
