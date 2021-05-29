@@ -15,7 +15,6 @@ float3 sampleIdealDielectric(Hit *hit, Material *material, bool backface, global
 	float n1 = 1.0f, n2 = material->Ni;
 	if (backface) swap_m(n1, n2, float); // inside of material
 	float eta = n1 / n2;
-	float cosT2 = 1.0f - eta * eta * (1.0f - cosI * cosI);
 
 	float fr = fresnelDielectric(cosI, n1, n2);
 	if (rand(randSeed) < fr)

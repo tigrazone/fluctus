@@ -102,14 +102,8 @@ kernel void sampleBsdf(
                 const float3 T = ReadFloat3(T, tasks);
                 const float3 envMapLi = evalEnvMapDir(envMap, L) * params->envMapStrength;
 				
-				float3 contrib;
+				const float3 contrib = brdf * T * envMapLi * cosTh / (lightPickProb * directPdfW + (params->sampleImpl)*bsdfPdfW);
 				
-                if (params->sampleImpl)
-                {					
-                    contrib = brdf * T * envMapLi * cosTh / (lightPickProb * directPdfW + bsdfPdfW);
-                } else {
-					contrib = brdf * T * envMapLi * cosTh / (lightPickProb * directPdfW);
-				}
                 const float3 newEi = ReadFloat3(Ei, tasks) + contrib;
                 WriteFloat3(Ei, tasks, newEi);
             }
@@ -142,16 +136,9 @@ kernel void sampleBsdf(
                 float directPdfW = pdfAtoW(directPdfA, lenL, cosLight); // 'how small area light looks'
                 float bsdfPdfW = max(0.0f, bxdfPdf(&hit, &mat, backface, textures, texData, r.dir, L));
 				
-				float3 contrib;
                 const float3 T = ReadFloat3(T, tasks);
-				
-                if (params->sampleImpl)
-                {
-					contrib = brdf * T * params->areaLight.E * cosTh / (lightPickProb * directPdfW + bsdfPdfW);
-                } else {
-					contrib = brdf * T * params->areaLight.E * cosTh / (lightPickProb * directPdfW);
-				}
-	
+				const float3 contrib = brdf * T * params->areaLight.E * cosTh / (lightPickProb * directPdfW + (params->sampleImpl)*bsdfPdfW);
+					
                 const float3 newEi = ReadFloat3(Ei, tasks) + contrib;
                 WriteFloat3(Ei, tasks, newEi);
             }

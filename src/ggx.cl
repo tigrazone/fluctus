@@ -195,8 +195,11 @@ float3 sampleGGXRefract(Hit *hit, Material *mat, bool backface, global TexDescri
 		*pdfW = ggxPdfRefract(alpha, etaI, etaO, dirInN, *dirOut, ((backface) ? -hit->N : hit->N), H);
 
 		// eta^2 applied in case of radiance transport (16.1.3)
+		/*
 		const bool lightTracing = false;
 		float3 bsdf = (lightTracing) ? (float3)(1.0f) : (float3)(eta * eta);
+		*/
+		float3 bsdf = (float3)(eta * eta);
 		
 		// Simulate absorption
 		float3 Ks = matGetFloat3(mat->Ks, hit->uvTex, mat->map_Ks, textures, texData);
@@ -250,8 +253,11 @@ float3 evalGGXRefract(Hit *hit, Material *mat, bool backface, global TexDescript
 		float eta = etaI / etaO;
 
 		// eta^2 applied in case of radiance transport (16.1.3)
+		/*
 		const bool lightTracing = false;
 		float3 bsdf = (lightTracing) ? (float3)(1.0f) : (float3)(eta * eta);
+		*/
+		float3 bsdf = (float3)(eta * eta);
 		
 		// Simulate absorption
 		float3 Ks = matGetFloat3(mat->Ks, hit->uvTex, mat->map_Ks, textures, texData);
