@@ -101,20 +101,14 @@ kernel void sampleBsdf(
 
                 const float3 T = ReadFloat3(T, tasks);
                 const float3 envMapLi = evalEnvMapDir(envMap, L) * params->envMapStrength;
-
-                float weight = 1.0f;
 				
 				float3 contrib;
 				
                 if (params->sampleImpl)
-                {
-                    const float weightProb = lightPickProb * directPdfW;
-			
-					weight = (weightProb) / (weightProb + bsdfPdfW);
-					
-                    contrib = brdf * T * envMapLi * weight * cosTh / (weightProb);
+                {					
+                    contrib = brdf * T * envMapLi * cosTh / (lightPickProb * directPdfW + bsdfPdfW);
                 } else {
-					contrib = brdf * T * envMapLi * weight * cosTh / (lightPickProb * directPdfW);
+					contrib = brdf * T * envMapLi * cosTh / (lightPickProb * directPdfW);
 				}
                 const float3 newEi = ReadFloat3(Ei, tasks) + contrib;
                 WriteFloat3(Ei, tasks, newEi);
@@ -147,18 +141,15 @@ kernel void sampleBsdf(
                 float cosTh = max(0.0f, dot(L, hit.N)); // cos at surface
                 float directPdfW = pdfAtoW(directPdfA, lenL, cosLight); // 'how small area light looks'
                 float bsdfPdfW = max(0.0f, bxdfPdf(&hit, &mat, backface, textures, texData, r.dir, L));
-
-                float weight = 1.0f;
+				
 				float3 contrib;
                 const float3 T = ReadFloat3(T, tasks);
 				
                 if (params->sampleImpl)
                 {
-                    const float weightProb = lightPickProb * directPdfW;
-                    weight = (weightProb) / (weightProb + bsdfPdfW);
-					contrib = brdf * T * params->areaLight.E * weight * cosTh / (weightProb);
+					contrib = brdf * T * params->areaLight.E * cosTh / (lightPickProb * directPdfW + bsdfPdfW);
                 } else {
-					contrib = brdf * T * params->areaLight.E * weight * cosTh / (lightPickProb * directPdfW);
+					contrib = brdf * T * params->areaLight.E * cosTh / (lightPickProb * directPdfW);
 				}
 	
                 const float3 newEi = ReadFloat3(Ei, tasks) + contrib;

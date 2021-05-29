@@ -163,16 +163,12 @@ kernel void logic(
 		
 
         // Only do MIS weighting if other samplers (bsdf-sampling) could have generated the sample
-        float weight = 1.0f;
         if (params->sampleImpl)
-        {
-			const float weightProb = directPdfW * lightPickProb;
-            weight = weightProb / (weightProb + bsdfPdfW);
-			
-			contrib = bsdf * T * emission * weight * cosTh / weightProb;
+        {			
+			contrib = bsdf * T * emission * cosTh / (lightPickProb * directPdfW + bsdfPdfW);
         }
 		else {
-			contrib = bsdf * T * emission * weight * cosTh / (directPdfW * lightPickProb);
+			contrib = bsdf * T * emission * cosTh / (lightPickProb * directPdfW);
 		}
         const float3 newEi = ReadFloat3(Ei, tasks) + contrib;
         WriteFloat3(Ei, tasks, newEi);
