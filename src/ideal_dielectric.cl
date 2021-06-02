@@ -15,8 +15,10 @@ float3 sampleIdealDielectric(Hit *hit, Material *material, bool backface, global
 	float n1 = 1.0f, n2 = material->Ni;
 	if (backface) swap_m(n1, n2, float); // inside of material
 	float eta = n1 / n2;
+	
+	float cosThetaT;
 
-	float fr = fresnelDielectric(cosI, n1, n2);
+	float fr = fresnelDielectric1(cosI, n1, n2, &cosThetaT);
 	if (rand(randSeed) < fr)
 	{
 		// Reflection
@@ -25,7 +27,7 @@ float3 sampleIdealDielectric(Hit *hit, Material *material, bool backface, global
 	else
 	{
 		// Refraction
-		*dirOut = refract((dirIn), hit->N, eta, &cosI);
+		*dirOut = refract1((dirIn), hit->N, eta, &cosI, &cosThetaT);
 		bsdf *= eta * eta; // eta^2 applied in case of radiance transport (16.1.3)
 		
 		// Simulate absorption

@@ -111,8 +111,8 @@ float3 sampleGGXReflect(Hit *hit, Material *mat, global TexDescriptor *textures,
 	float3 Ks = matGetFloat3(mat->Ks, hit->uvTex, mat->map_Ks, textures, texData);
 	float D = ggxD(alpha, hit->N, H);
 	float G = ggxG(alpha, dirInN, *dirOut, hit->N, H);
-	float den = (4.0f * iDotN * oDotN);
-	return (den != 0.0f) ? (Ks * F * G * D / den) : (float3)(0.0f, 0.0f, 0.0f);
+	float den = (iDotN * oDotN);
+	return (den != 0.0f) ? (Ks * F * G * D * 0.25f / den) : (float3)(0.0f, 0.0f, 0.0f);
 }
 
 float3 evalGGXReflect(Hit *hit, Material *mat, global TexDescriptor *textures, global uchar *texData, float3 dirIn, float3 dirOut)
@@ -133,8 +133,8 @@ float3 evalGGXReflect(Hit *hit, Material *mat, global TexDescriptor *textures, g
 	float3 Ks = matGetFloat3(mat->Ks, hit->uvTex, mat->map_Ks, textures, texData);
 	float D = ggxD(alpha, hit->N, H);
 	float G = ggxG(alpha, dirInN, dirOut, hit->N, H);
-	float den = (4.0f * iDotN * oDotN);
-	return (den != 0.0f) ? (Ks * F * G * D / den) : (float3)(0.0f, 0.0f, 0.0f);
+	float den = (iDotN * oDotN);
+	return (den != 0.0f) ? (Ks * F * G * D * 0.25f / den) : (float3)(0.0f, 0.0f, 0.0f);
 }
 
 float pdfGGXReflect(Hit *hit, Material *mat, float3 dirIn, float3 dirOut)
@@ -167,9 +167,11 @@ float3 sampleGGXRefract(Hit *hit, Material *mat, bool backface, global TexDescri
 	
 	// Importance sample GGX lobe
 	float3 H = ggxSampleLobe(alpha, dirInN, hit->N, seed);
+	
+	float cosThetaT;
 
 	// Importance sample refrection and refraction based on Fresnel term
-	float F = fresnelDielectric(iDotN, etaI, etaO);
+	float F = fresnelDielectric1(iDotN, etaI, etaO, &cosThetaT);
 	if (rand(seed) < F)
 	{
 		// Reflection
@@ -181,14 +183,14 @@ float3 sampleGGXRefract(Hit *hit, Material *mat, bool backface, global TexDescri
 		float oDotN = dot(*dirOut, hit->N);
 		float D = ggxD(alpha, hit->N, H);
 		float G = ggxG(alpha, dirInN, *dirOut, hit->N, H);
-		float den = (4.0f * iDotN * oDotN);
-		return (den != 0.0f) ? (F * G * D / den) : 0.0f;
+		float den = (iDotN * oDotN);
+		return (den != 0.0f) ? (F * G * D * 0.25f / den) : 0.0f;
 	}
 	else
 	{
 		// Refraction
 		float eta = etaI / etaO;
-		*dirOut = refract((dirIn), hit->N, eta, &iDotN);
+		*dirOut = refract1((dirIn), hit->N, eta, &iDotN, &cosThetaT);
 
 		// Recalculate H (eq. 16)
 		H = normalize((dirIn * etaI - *dirOut * etaO));
@@ -243,8 +245,8 @@ float3 evalGGXRefract(Hit *hit, Material *mat, bool backface, global TexDescript
 		float3 H = normalize(dirOut - dirIn);
 		float D = ggxD(alpha, hit->N, H);
 		float G = ggxG(alpha, dirInN, dirOut, hit->N, H);
-		float den = (4.0f * iDotN * oDotN);
-		return (den != 0.0f) ? (F * G * D / den) : (float3)(0.0f, 0.0f, 0.0f);
+		float den = (iDotN * oDotN);
+		return (den != 0.0f) ? (F * G * D * 0.25f / den) : (float3)(0.0f, 0.0f, 0.0f);
 	}
 	else
 	{

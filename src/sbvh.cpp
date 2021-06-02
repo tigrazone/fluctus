@@ -112,7 +112,7 @@ SBVHNode* SBVH::build(NodeSpec &spec, int depth, F32 progressStart, F32 progress
 
 	// 1. Find object split candidate using full SAH search
 	F32 parentArea = spec.box.area();
-	F32 nodeSAH = parentArea * 2 * 1;
+	F32 nodeSAH = parentArea + parentArea;
 	SplitInfo objectSplit = sahSplit(spec, nodeSAH);
 
 	// 2. Find spatial split candidate using chopped binning
@@ -202,7 +202,8 @@ BVH::SplitInfo SBVH::sahSplit(const NodeSpec& spec, F32 nodeSAH)
 			F32 cleft = areaLeft * leftCount * sahParams.costTri;
 			F32 cright = areaRight * (spec.refs - leftCount) * sahParams.costTri;
 			F32 cost = nodeSAH + cleft + cright;
-			F32 tieBreak = pow((F32)i, 2) + pow((F32)(spec.refs - i), 2);
+			//F32 tieBreak = pow((F32)i, 2) + pow((F32)(spec.refs - i), 2);
+			F32 tieBreak = ((F32)i)*((F32)i) + ((F32)(spec.refs - i))*((F32)(spec.refs - i));
 
 			if (cost < info.cost || (cost == info.cost && tieBreak < bestTieBreak))
 			{

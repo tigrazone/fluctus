@@ -43,7 +43,7 @@ kernel void wavefrontAllMaterials(
     float3 newT;
     if (pdfW == 0.0f || isZero(bsdf))
 		newT = (float3)(0.0f, 0.0f, 0.0f);
-    else
+    else 
         newT = oldT * bsdf * dot(hit.N, (newDir)) / pdfW;
         
     // Avoid self-shadowing

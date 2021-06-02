@@ -32,6 +32,7 @@ inline float3 reflect0(float3 dir, float3 n) // dir normalized?
     return dir - dot(dir, n) * (n+n);
 }
 
+/*
 inline float3 refract0(float3 wi, float3 n, float eta)
 {
 	float iDotN = - dot(wi, n);
@@ -40,12 +41,14 @@ inline float3 refract0(float3 wi, float3 n, float eta)
 	float cosThetaT = sqrt(max(0.0f, 1.0f - sin2ThetaT));
 	return wi * eta + n * (eta * iDotN - cosThetaT);
 }
+*/
 
 inline float3 reflect(float3 dir, float3 n, float *dott) // dir normalized?
 {
-    return dir + *dott * (n+n);
+    return dir + (*dott + *dott)* n;
 }
 
+/*
 inline float3 refract(float3 wi, float3 n, float eta, float *iDotN)
 {
 	float sin2ThetaI = max(0.0f, 1.0f - *iDotN * *iDotN);
@@ -53,21 +56,27 @@ inline float3 refract(float3 wi, float3 n, float eta, float *iDotN)
 	float cosThetaT = sqrt(max(0.0f, 1.0f - sin2ThetaT));
 	return wi * eta + n * (eta * *iDotN - cosThetaT);
 }
+*/
+
+inline float3 refract1(float3 wi, float3 n, float eta, float *iDotN, float *cosThetaT)
+{
+	return wi * eta + n * (eta * *iDotN - *cosThetaT);
+}
 
 inline void calcNormalSphere(global Sphere *scene, Hit *hit)
 {
     hit->N = normalize(hit->P - (scene +hit->i)->P);
 }
 
+//Building an Orthonormal Basis, Revisited http://jcgt.org/published/0006/01/01/
 inline void makeOrthoBasis(const float3 N, float3 *a, float3 *b)
 {
-	if(N.x != N.y || N.x != N.z)
-		*a = (float3)(N.z-N.y, N.x-N.z, N.y-N.x);
-	else
-		*a = (float3)(N.z-N.y, N.x+N.z, -N.y-N.x);
-
-	*a = normalize(*a);
-	*b = cross(N, *a);
+	int sign = (N.z > 0.0f) * 2 - 1;
+	float aa = - native_recip(sign + N.z);
+	float bb = N.x * N.y * aa;	
+	
+	*a = (float3) (1.0f + sign * N.x * N.x * aa, sign * bb, -sign * N.x);
+	*b = (float3) (bb, sign + N.y * N.y * aa, -N.y);
 }
 
 // Return a sample through the center of the Nth subpixel
@@ -106,22 +115,19 @@ inline float3 cosSampleHemisphere(float3 n, uint *seed, float *p)
     float r2s = sqrt(r2);
 
     float3 w = n;
-
-    float3 u;
-    if (fabs(w.x) > 0.1f) {
-        float3 a = (float3)(0.0f, 1.0f, 0.0f);
-        u = cross(a, w);
-    }
-    else {
-        float3 a = (float3)(1.0f, 0.0f, 0.0f);
-        u = cross(a, w);
-    }
-    u = normalize(u);
-
-    float3 v = cross(w, u);
+	
+	int sign = (w.z > 0.0f) * 2 - 1;
+	float aa = - native_recip(sign + w.z);
+	float bb = w.x * w.y * aa;	
+	
+	float3 u = (float3) (1.0f + sign * w.x * w.x * aa, sign * bb, -sign * w.x);
+	float3 v = (float3) (bb, sign + w.y * w.y * aa, -w.y);
+	
+	float cosR1;
+	float sinR1 = sincos(r1, &cosR1);
     
-    u *= (cos(r1) * r2s);
-    v *= (sin(r1) * r2s);
+    u *= (cosR1 * r2s);
+    v *= (sinR1 * r2s);
     w *= (sqrt(1 - r2));
 
     float3 dir = u + v + w;

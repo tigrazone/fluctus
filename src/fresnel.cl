@@ -31,6 +31,37 @@ inline float fresnelDielectric(float cosThI, float etaI, float etaT)
 	return 0.5f * (parl * parl + perp * perp);
 }
 
+// Fresnel for dielectrics, unpolarized light (PBRT p.519)
+inline float fresnelDielectric1(float cosThI, float etaI, float etaT, float *cosThetaT)
+{
+	float sinThetaI = sqrt(max(0.0f, 1.0f - cosThI * cosThI));
+	float sinThetaT = etaI / etaT * sinThetaI;
+	*cosThetaT = sqrt(max(0.0f, 1.0f - sinThetaT * sinThetaT));
+
+	if (sinThetaT >= 1.0f)
+		return 1.0f;
+
+	/*
+	float parl = ((etaT * cosThI) - (etaI * cosThetaT)) /
+				 ((etaT * cosThI) + (etaI * cosThetaT));
+	
+	float perp = ((etaI * cosThI) - (etaT * cosThetaT)) /
+				 ((etaI * cosThI) + (etaT * cosThetaT));
+	*/
+	
+	//8* vs 4*
+	float etaT_cosThI = etaT * cosThI;			 
+	float etaI_cosThetaT = etaI * *cosThetaT;
+	float parl = (etaT_cosThI - etaI_cosThetaT) / (etaT_cosThI + etaI_cosThetaT);
+				 
+	float etaI_cosThI = etaI * cosThI;			 
+	float etaT_cosThetaT = etaT * *cosThetaT;
+	float perp = (etaI_cosThI - etaT_cosThetaT) / (etaI_cosThI + etaT_cosThetaT);
+	
+	return 0.5f * (parl * parl + perp * perp);
+}
+
+/*
 // Schlick's approximation for dielectrics
 inline float schlickDielectric(float cosThI, float etaI, float etaT)
 {
@@ -44,7 +75,9 @@ inline float schlickDielectric(float cosThI, float etaI, float etaT)
 	float c = 1.0f - fabs(cosThI);
 	return r0 + (1.0f - r0) * native_powr(c, 5.0f);
 }
+*/
 
+/*
 // Fresnel for conductor-dielectric interface
 // PBRT equations [8.3, 8.4] (src/core/reflection.cpp)
 // Imaginary part = absorption coefficient
@@ -73,5 +106,6 @@ inline float3 fresnelConductor(float cosThetaI, float3 etai, float3 etat, float3
 
     return 0.5f * (Rp + Rs);
 }
+*/
 
 #endif

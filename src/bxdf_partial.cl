@@ -55,7 +55,7 @@ Spectrum bxdfSample(
 #endif
 #ifdef BXDF_USE_EMISSIVE
 		case BXDF_EMISSIVE:
-			return material->Ke;
+			return (float3)(1.0f, 1.0f, 1.0f);
 #endif
 	}
 
@@ -100,7 +100,7 @@ Spectrum bxdfEval(
 #endif
 #ifdef BXDF_USE_EMISSIVE
 		case BXDF_EMISSIVE:
-			return material->Ke;
+			return (float3)(1.0f, 1.0f, 1.0f);
 #endif
 	}
 	

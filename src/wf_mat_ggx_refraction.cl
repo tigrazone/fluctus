@@ -43,6 +43,7 @@ kernel void wavefrontGGXRefraction(
     // Update throughput * pdf
 	const float3 oldT = ReadFloat3(T, tasks);
     float3 newT;
+
     if (pdfW == 0.0f || isZero(bsdf))
 		newT = (float3)(0.0f, 0.0f, 0.0f);
     else {

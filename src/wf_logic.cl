@@ -298,16 +298,20 @@ kernel void logic(
 
             // Shadow ray
             float3 L = posL - orig;
-            float lenL0 = length(L);
-            float lenL = lenL0 * 0.995f; // don't intersect with emitter itself
-            L /= lenL0; //tigra: dont remove normalize
 
             float cosLight = max(dot(params->areaLight.N, -L), 0.0f);
             
             // Only use samples that hit emissive side
             if (cosLight > 0.0f)
             {
-                float directPdfW = pdfAtoW(directPdfA, lenL, cosLight);
+				float lenL0 = length(L);
+				float lenL = lenL0 * 0.995f; // don't intersect with emitter itself
+				
+				float invLEN = native_recip(lenL0);
+				
+				L *= invLEN; //tigra: dont remove normalize
+			
+                float directPdfW = pdfAtoW(directPdfA, lenL, cosLight*invLEN);
                 float cosTh = max(0.0f, dot(L, hit.N));
                 float3 emission = params->areaLight.E;
 
