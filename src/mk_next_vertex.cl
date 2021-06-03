@@ -100,7 +100,7 @@ kernel void nextVertex(
 		bool lastSpecular = ReadU32(lastSpecular, tasks);
 		if (params->sampleExpl && *len > 1 && !lastSpecular) // not very direct + MIS needed
 		{
-			const float directPdfA = 1.0f / (4.0f * params->areaLight.size.x * params->areaLight.size.y);
+			const float directPdfA = native_recip(4.0f * params->areaLight.size.x * params->areaLight.size.y);
 			const float directPdfW = pdfAtoW(directPdfA, length(hit.P - r.orig), - dot((r.dir), hit.N));
 			const float lightPickProb = 1.0f;
 			const float lastPdfW = ReadF32(lastPdfW, tasks);

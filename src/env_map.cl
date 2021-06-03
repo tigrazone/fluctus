@@ -33,7 +33,7 @@ inline float2 directionToUV(float3 dir)
 inline float3 UVToDirection(float u, float v, float *sinPhi)
 {
     float phi = v * M_PI_F;
-    float theta = (u + u - 1.0f) * M_PI_F;
+    float theta = u * M_2PI_F - M_PI_F;
 	
     float cosPhi, cosTh;	
 	

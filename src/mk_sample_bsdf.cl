@@ -50,7 +50,7 @@ kernel void sampleBsdf(
 
     // Fix backside hits
     bool backface = dot(hit.N, r.dir) > 0.0f;
-    if (backface) hit.N *= -1.0f;
+    if (backface) hit.N = - hit.N;
     float3 orig = hit.P - 1e-3f * r.dir;  // avoid self-shadowing
 
 #ifdef USE_OPTIX_DENOISER

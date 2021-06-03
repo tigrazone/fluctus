@@ -70,7 +70,7 @@ inline bool intersectTriangle(Ray *r, global Triangle *tri, float *tret, float *
 
     // miss if det close to 0
     if (fabs(det) < EPSILON) return false;
-    float iDet = 1.0f / det;
+    float iDet = native_recip(det);
 
     float3 tvec = r->orig - tri->v0.p;
     float u = dot(tvec, pvec) * iDet;
@@ -102,7 +102,7 @@ inline bool intersectTriangleLocal(Ray *r, Triangle *tri, float *tres)
 
     // miss if det close to 0
     if (fabs(det) < EPSILON) return false;
-    float iDet = 1.0f / det;
+    float iDet = native_recip(det);
 
     float3 tvec = r->orig - tri->v0.p;
     float u = dot(tvec, pvec) * iDet;

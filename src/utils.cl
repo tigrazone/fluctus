@@ -193,7 +193,7 @@ inline float3 tangentSpaceNormal(Hit hit, global Triangle *tris, const Material 
         return hit.N;
 
     // Compute T, B using inverse of [t1.x t1.y; t2.x t2.y]
-    float invDet = 1.0f / det;
+    float invDet = native_recip(det);
     float3 T = (invDet * (e1 * t2.y - e2 * t1.y));
     float3 B = (invDet * (e2 * t1.x - e1 * t2.x));
 
