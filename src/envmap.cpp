@@ -111,4 +111,6 @@ void EnvironmentMap::computeProbabilities()
 		small.pop();
 		probTable[l.second] = 1.0f;
 	}
+	
+	for (int i = 0; i < width*height; i++) pdfTable[i] *= INV_M_2PI_PI_F;
 }

@@ -744,6 +744,69 @@ void Scene::loadPBFModel(const std::string filename, ModelTransform* transform)
     };
 
     traverse(scene->world, pbrt::affine3f::identity());
+	
+	printf("Cameras: %d\n", scene->cameras.size());
+	int camN = 0;
+	
+    for (auto cam0 : scene->cameras) {
+      printf("%d %s\n", camN, (cam0->toString()).c_str());
+	  camN++;
+	}
+
+	/*
+    Camera::SP ours = std::make_shared<Camera>();
+    if (camera->hasParam1f("fov"))
+      ours->fov = camera->getParam1f("fov");
+    if (camera->hasParam1f("lensradius"))
+      ours->lensRadius = camera->getParam1f("lensradius");
+    if (camera->hasParam1f("focaldistance"))
+      ours->focalDistance = camera->getParam1f("focaldistance");
+
+    ours->frame = inverse(camera->transform.atStart);
+      
+    ours->simplified.lens_center
+      = ours->frame.p;
+    ours->simplified.lens_du
+      = ours->lensRadius * ours->frame.l.vx;
+    ours->simplified.lens_dv
+      = ours->lensRadius * ours->frame.l.vy;
+      
+    const float fovDistanceToUnitPlane = 0.5f / tanf(ours->fov/2 * (float)M_PI/180.f);
+    ours->simplified.screen_center
+      = ours->frame.p + ours->focalDistance * ours->frame.l.vz;
+    ours->simplified.screen_du
+      = - ours->focalDistance/fovDistanceToUnitPlane * ours->frame.l.vx;
+    ours->simplified.screen_dv
+      = ours->focalDistance/fovDistanceToUnitPlane * ours->frame.l.vy;
+	  */
+	  
+	/*
+    const auto right = scene->getWorldRight();
+    const auto up = scene->getWorldUp();
+
+    const fr::matrix rot = 
+		rotation(right, 
+			toRad(cameraRotation.y)) * 
+		rotation(up, 
+			toRad(cameraRotation.x));
+
+    params.camera.right = fr::float3(rot.m00, rot.m01, rot.m02);
+    params.camera.up =    fr::float3(rot.m10, rot.m11, rot.m12);
+    params.camera.dir =  -fr::float3(rot.m20, rot.m21, rot.m22);	
+	*/
+	
+	/*	
+		typedef struct
+		{
+			vfloat3 pos;     // 16B
+			vfloat3 dir;     // 16B
+			vfloat3 up;      // 16B
+			vfloat3 right;   // 16B
+			cl_float fov;   // 4B
+			cl_float apertureSize; // DoF
+			cl_float focalDist;    // DoF
+		} Camera;
+	*/
 
     // Read xform active when camera was created
     pbrt::Camera::SP cam = scene->cameras[0];
@@ -848,7 +911,7 @@ void Scene::loadPBFModel(const std::string filename, ModelTransform* transform)
         }
         else
         {
-            std::cout << "Unhandled material type" << std::endl;
+            std::cout << "Unhandled material type " << t_mat.get()->toString()<< std::endl;
         }
 
         materials.push_back(m);

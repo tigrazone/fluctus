@@ -902,11 +902,13 @@ void Tracer::initHierarchy()
 
     if (input.good())
     {
+		std::cout << "Trinagles: " << scene->getTriangles().size() << std::endl;
         std::cout << "Reusing BVH..." << std::endl;
         loadHierarchy(hashFile, scene->getTriangles());
     }
     else
     {
+		std::cout << "Trinagles: " << scene->getTriangles().size() << std::endl;
         std::cout << "Building BVH..." << std::endl;
         constructHierarchy(scene->getTriangles(), SplitMode::SAH, window->getProgressView());
         saveHierarchy(hashFile);

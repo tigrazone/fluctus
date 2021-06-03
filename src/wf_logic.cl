@@ -208,7 +208,7 @@ kernel void logic(
     Material mat = materials[hit.matId];
     hit.N = tangentSpaceNormal(hit, tris, mat, textures, texData);
     bool backface = dot(hit.N, r.dir) > 0.0f;
-    if (backface) hit.N *= -1.0f;
+    if (backface) hit.N = - hit.N;
     float3 orig = hit.P - 1e-3f * r.dir;
 
 #ifdef USE_OPTIX_DENOISER

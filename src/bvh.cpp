@@ -1,6 +1,8 @@
 #include <iostream>
 #include <cfloat>
 #include <cassert>
+
+#include <time.h>
 #include "bvh.hpp"
 
 BVH::BVH(std::vector<RTTriangle>* tris, SplitMode mode)
@@ -146,9 +148,15 @@ std::vector<Node> importNodes(std::ifstream &in)
 
 void BVH::importFrom(const std::string filename)
 {
+	clock_t time1, time2;
+	
+	time1 = clock();
     std::ifstream infile(filename, std::ios::binary);
     m_indices = importIndices(infile);
     m_nodes = importNodes(infile);
+	
+	time2 = clock();
+	printf("%s\n%.2f s\n", filename.c_str(), (float)(time2-time1)/(float)CLOCKS_PER_SEC);
 }
 
 
@@ -172,7 +180,10 @@ void exportNode(std::ofstream &out, const Node &n)
 
 /** Write BVH to file for later importing **/
 void BVH::exportTo(const std::string filename) const
-{
+{	
+	clock_t time1, time2;
+	
+	time1 = clock();
     std::ofstream out(filename, std::ios::binary);
 
     if (out.good())
@@ -189,6 +200,9 @@ void BVH::exportTo(const std::string filename) const
     {
         std::cout << "Could not create create file for BVH export!" << std::endl;
     }
+	
+	time2 = clock();
+	printf("%s\n%.2f s\n", filename.c_str(), (float)(time2-time1)/(float)CLOCKS_PER_SEC);
 }
 
 // Too frequent printing is actually a bottleneck!

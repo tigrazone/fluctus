@@ -13,30 +13,35 @@ constant sampler_t samplerFloat = CLK_NORMALIZED_COORDS_TRUE | CLK_ADDRESS_CLAMP
 // U mapped from [0,2] to [0,1]
 inline float2 directionToUV(float3 dir)
 {
+	/*
     if (dir.x == 0.0f && dir.y == 0.0f && dir.z == 0.0f)
         return (float2)(0.0f, 0.0f);
-
+	*/
+/*
     float u = 1.0f + atan2(dir.x, -dir.z) * M_INV_PI;
-    float r = clamp(dir.y / length(dir), -1.0f, 1.0f);
-    float v = acos(r) * M_INV_PI;
+    //float r = clamp(dir.y / length(dir), -1.0f, 1.0f);
+    float v = acos(dir.y) * M_INV_PI;
 
     return (float2)(u * 0.5f, v);
+	*/
+	
+	return (float2)(atan2(dir.x, -dir.z) * INV_TWO_PI + 0.5f, acos(dir.y)* M_INV_PI);
 }
 
 // Mapping from http://gl.ict.usc.edu/Data/HighResProbes/
 // U mapped from [0,1] to [0,2]
-inline float3 UVToDirection(float u, float v)
+inline float3 UVToDirection(float u, float v, float *sinPhi)
 {
     float phi = v * M_PI_F;
     float theta = (u + u - 1.0f) * M_PI_F;
 	
     float cosPhi, cosTh;	
 	
-    float sinPhi = sincos(phi, &cosPhi);
+    *sinPhi = sincos(phi, &cosPhi);
 	
     float sinTh = sincos(theta, &cosTh);
 	
-    return (float3)(sinPhi*sinTh, cosPhi, -sinPhi*cosTh);
+    return (float3)(*sinPhi*sinTh, cosPhi, -*sinPhi*cosTh);
 }
 
 inline float3 evalEnvMapDir(read_only image2d_t envMap, float3 dir)
@@ -69,27 +74,29 @@ inline void sampleEnvMapAlias(float rnd, float3 *L, float *pdfW, EnvMapContext c
 {
     const int width = ctx.width;
     const int height = ctx.height;
+	
+	const int wh = width * height;
 
 	// Sample 1D distribution over whole image
-	float rand = rnd * width * height;
-	int i = min((int)floor(rand), width * height - 1);
+	float rand = rnd * wh;
+	int i = min((int)floor(rand), wh - 1);
     float mProb = ctx.probTable[i];
     int uvInd = (rand - i < mProb) ? i : ctx.aliasTable[i];
-    float pdf_uv = ctx.pdfTable[uvInd];
+    //float pdf_uv = ctx.pdfTable[uvInd];
 
     // Compute outgoing dir
-	int uInd = uvInd % width;
-	int vInd = uvInd / width;
-    float u = (float)(uInd + 0.5f) / width;
-    float v = (float)(vInd + 0.5f) / height;
-    *L = UVToDirection(u, v);
+	//int uInd = uvInd % width;
+	// int vInd = uvInd / width;
+    float u = ((float)(uvInd % width) + 0.5f) * native_recip((float)width);
+    float v = ((float)uvInd + 0.5f) * native_recip((float)wh);
+	
+	float sinTh;
+	
+    *L = UVToDirection(u, v, &sinTh);
 
     // Compute pdf
-    const float lightPickProb = 1.0f;
-    float sinTh = sin(M_PI_F * v);
-    float directPdfUV = pdf_uv * lightPickProb;
     if (sinTh != 0.0f)
-        *pdfW = directPdfUV / (M_2PI_PI_F * sinTh);
+        *pdfW = ctx.pdfTable[uvInd] * native_recip(sinTh);
     else
         *pdfW = 0.0f;
 }
@@ -97,14 +104,16 @@ inline void sampleEnvMapAlias(float rnd, float3 *L, float *pdfW, EnvMapContext c
 // Get pdf of sampling 'direction', used in MIS
 float envMapPdf(int width, int height, global float *pdfTable, float3 direction)
 {
-    float2 uv = directionToUV(direction);
-    float sinTh = sin(uv.y * M_PI_F);
-    
-    if (sinTh == 0.0f)
+    if (direction.y > 0.99f)
         return 0.0f;
+	
+    float2 uv = directionToUV(direction);
+    //float sinTh = sin(uv.y * M_PI_F);
+	
+    //float sinTh = rsqrt (1.0f - direction.y*direction.y);
 
     int iu = min((int)floor(uv.x * width), width - 1);
     int iv = min((int)floor(uv.y * height), height - 1);
 
-    return pdfTable[iv * width + iu] / (M_2PI_PI_F * sinTh);
+    return pdfTable[iv * width + iu] * rsqrt (1.0f - direction.y*direction.y);
 }

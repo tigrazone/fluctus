@@ -18,7 +18,7 @@ inline uint hash(uint seed)
 inline float rand(uint *seed)
 {
     *seed = hash(*seed);
-    return (float)(*seed) * (1.0f / 4294967296.0f); // 1.0f / 2^32
+    return (float)(*seed) * (one_4294967296); // 1.0f / 2^32
 }
 
 #endif

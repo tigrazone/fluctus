@@ -250,7 +250,7 @@ inline Hit readHitSoA(global GPUTaskState *tasks, const size_t gid, const uint n
 
 inline void sampleAreaLight(AreaLight light, float *pdf, float3 *p, uint *seed)
 {
-	*pdf = 1.0f / (4.0f * light.size.x * light.size.y);
+	*pdf = native_recip (4.0f * light.size.x * light.size.y);
 	*p = light.pos;
 	float r1 = rand(seed);
 	float r2 = rand(seed);

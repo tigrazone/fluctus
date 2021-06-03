@@ -12,6 +12,9 @@ typedef float3 vfloat3;
 #define one2_2 (0.454545454545454545f)
 #define one_255 (0.003921568627451f)
 
+// 1.0f / 4294967296.0f
+#define one_4294967296 (2.3283064365386963e-10f)
+
 #else
 #include "cl2.hpp"
 #include "math/float2.hpp"
@@ -25,6 +28,8 @@ typedef FireRays::float2 vfloat2;
 #define M_INV_PI (0.3183098861837907f)
 #define M_2PI_F (6.2831853071795864f)
 #define M_2PI_PI_F (19.739208802178717237668981999752f)
+#define INV_M_2PI_PI_F (0.05066059182116888572193973160486f)
+#define INV_TWO_PI (0.1591549430918954f)
 
 #define toRad(deg) (deg * PI / 180)
 #define toDeg(rad) (rad * 180 / PI)
