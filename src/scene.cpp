@@ -244,9 +244,12 @@ void Scene::loadObjWithMaterials(const std::string filePath, ProgressView *progr
     {
         tinyobj::shape_t &shape = shapesVec[i];
         assert((shapesVec[i].mesh.indices.size() % 3) == 0); // properly triangulated
+		
+		size_t tris_in_mesh = shape.mesh.indices.size() / 3;
 
+		size_t ff = 0;
         // Loop over faces in the shape's mesh
-        for (size_t f = 0; f < shape.mesh.indices.size() / 3; f++)
+        for (size_t f = 0; f < tris_in_mesh; f++)
         {
             // Progress bar
             size_t N = triangles.size();
@@ -260,12 +263,14 @@ void Scene::loadObjWithMaterials(const std::string filePath, ProgressView *progr
             bool allNormals = true;
             for (size_t v = 0; v < 3; v++)
             {
-                auto ind = shape.mesh.indices[3 * f + v];
+                auto ind = shape.mesh.indices[ff + v];
+				
+				size_t ind_vi3 = ind.vertex_index + ind.vertex_index + ind.vertex_index;
                 
                 // Position
-                fr::float3 pos = fr::float3(attrib.vertices[3 * ind.vertex_index + 0],
-                                   attrib.vertices[3 * ind.vertex_index + 1],
-                                   attrib.vertices[3 * ind.vertex_index + 2]);
+                fr::float3 pos = fr::float3(attrib.vertices[ind_vi3],
+                                   attrib.vertices[ind_vi3 + 1],
+                                   attrib.vertices[ind_vi3 + 2]);
                 V[v].p = transform ? transform->apply(pos) : pos;
 
                 // Normal
@@ -276,14 +281,16 @@ void Scene::loadObjWithMaterials(const std::string filePath, ProgressView *progr
                 }
                 else
                 {
-                    V[v].n = fr::float3(attrib.normals[3 * ind.normal_index + 0],
-                                       attrib.normals[3 * ind.normal_index + 1],
-                                       attrib.normals[3 * ind.normal_index + 2]);
+					size_t ind_n3 = ind.normal_index + ind.normal_index + ind.normal_index;
+					
+                    V[v].n = fr::float3(attrib.normals[ind_n3],
+                                       attrib.normals[ind_n3 + 1],
+                                       attrib.normals[ind_n3 + 2]);
                 }
 
                 // Tex coord
                 if (ind.texcoord_index > -1 && hasTexCoords)
-                    V[v].t = fr::float3(attrib.texcoords[2 * ind.texcoord_index + 0], attrib.texcoords[2 * ind.texcoord_index + 1], 0.0f);
+                    V[v].t = fr::float3(attrib.texcoords[ind.texcoord_index + ind.texcoord_index], attrib.texcoords[ind.texcoord_index + ind.texcoord_index + 1], 0.0f);
                 else
                     V[v].t = fr::float3(0.0f);
             }
@@ -295,6 +302,8 @@ void Scene::loadObjWithMaterials(const std::string filePath, ProgressView *progr
             int matId = shape.mesh.material_ids[f];
             tri.matId = matId == -1 ? 0 : matId + materials.size(); // -1 becomes 0 (default material)
             triangles.push_back(tri);
+			
+			ff += 3;
         }
     }
 
@@ -362,104 +371,6 @@ cl_int Scene::tryImportTexture(const std::string path, std::string name)
     return (cl_int)(textures.size() - 1);
 }
 
-void Scene::loadObjModel(const std::string filename, ModelTransform* transform)
-{
-    std::vector<fr::float3> positions, normals;
-    std::vector<std::array<unsigned, 6>> faces;
-    
-    int face_format = -1;
-    std::string format_string = "";
-    bool negative_indices = false;
-
-    // Open input file stream for reading.
-    std::ifstream input(filename, std::ios::in);
-
-    if(!input)
-    {
-        std::cout << "Could not open file: " << filename << ", exiting..." << std::endl;
-        waitExit();
-    }
-
-    // Read the file line by line.
-    std::string line;
-    while(getline(input, line))
-    {
-        // Temporary objects to read data into
-        std::array<unsigned, 6>  f; // Face index array
-        std::string              s;
-
-        std::istringstream iss(line);
-
-        // Read object type into s
-        iss >> s;
-
-        // MSVCCompiler has a float cast performance bug
-        //   => patch: read into string, cast with atof
-        std::string s1, s2, s3;
-        if (s == "v")
-        {
-            iss >> s1 >> s2 >> s3;
-            float x = (float)atof(s1.c_str());
-            float y = (float)atof(s2.c_str());
-            float z = (float)atof(s3.c_str());
-            positions.push_back(fr::float3(x, y, z));
-        }
-        else if (s == "vn")
-        {
-            iss >> s1 >> s2 >> s3;
-            float nx = (float)atof(s1.c_str());
-            float ny = (float)atof(s2.c_str());
-            float nz = (float)atof(s3.c_str());
-            normals.push_back(fr::float3(nx, ny, nz));
-        }
-        else if (s == "f")
-        {
-            setFaceFormat(face_format, format_string, negative_indices, iss);
-
-            unsigned sink; // Texture indices ignored for now
-
-            switch (face_format) {
-            case 0:
-                sscanf(line.c_str(), format_string.c_str(), &f[0], &sink, &f[1], &f[2], &sink, &f[3], &f[4], &sink, &f[5]);
-                break;
-            case 1:
-                sscanf(line.c_str(), format_string.c_str(), &f[0], &f[1], &f[2], &f[3], &f[4], &f[5]);
-                break;
-            case 2:
-                sscanf(line.c_str(), format_string.c_str(), &f[0], &sink, &f[2], &sink, &f[4], &sink);
-                break;
-            case 3:
-                sscanf(line.c_str(), format_string.c_str(), &f[0], &f[2], &f[4]);
-                break;
-            }
-
-            if (negative_indices)
-            {
-                // Calculate indices from offsets
-                int p = positions.size();
-                int n = normals.size();
-                f[0] = p - f[0];
-                f[1] = n - f[1];
-                f[2] = p - f[2];
-                f[3] = n - f[3];
-                f[4] = p - f[4];
-                f[5] = n - f[5];
-            }
-            else
-            {
-                // Obj indices start from 1, need to be shifted
-                for (unsigned& v : f)
-                {
-                    v -= 1;
-                }
-            }
-
-            faces.push_back(f);
-        }
-    }
-
-    unpackIndexedData(positions, normals, faces, false, transform);
-}
 
 /* Used for loading PLY meshes */
 void Scene::loadPlyModel(const std::string filename, ModelTransform* transform)
