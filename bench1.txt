@@ -1,0 +1,3 @@
+assets/egyptcat/egyptcat.obj: 3.6M primary, 38.59M extension, 27.52M shadow, 3.59M samples, total: 69.73M rays/s
+assets/conference/conference.obj: 1.9M primary, 20.42M extension, 18.51M shadow, 1.88M samples, total: 40.84M rays/s
+assets/country_kitchen/Country-Kitchen.obj: 2.2M primary, 21.41M extension, 13.45M shadow, 2.20M samples, total: 37.10M rays/s

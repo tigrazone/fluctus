@@ -13,33 +13,23 @@ constant sampler_t samplerFloat = CLK_NORMALIZED_COORDS_TRUE | CLK_ADDRESS_CLAMP
 // U mapped from [0,2] to [0,1]
 inline float2 directionToUV(float3 dir)
 {
-	/*
-    if (dir.x == 0.0f && dir.y == 0.0f && dir.z == 0.0f)
-        return (float2)(0.0f, 0.0f);
-	*/
-/*
-    float u = 1.0f + atan2(dir.x, -dir.z) * M_INV_PI;
-    //float r = clamp(dir.y / length(dir), -1.0f, 1.0f);
-    float v = acos(dir.y) * M_INV_PI;
-
-    return (float2)(u * 0.5f, v);
-	*/
-	
-	return (float2)(atan2(dir.x, -dir.z) * INV_TWO_PI + 0.5f, acos(dir.y)* M_INV_PI);
+	return (float2)(atan2pi(dir.x, -dir.z)*0.5f + 0.5f, acospi(dir.y)); // remove *M_INV_PI
 }
 
 // Mapping from http://gl.ict.usc.edu/Data/HighResProbes/
 // U mapped from [0,1] to [0,2]
 inline float3 UVToDirection(float u, float v, float *sinPhi)
 {
+	/*
     float phi = v * M_PI_F;
     float theta = u * M_2PI_F - M_PI_F;
+	*/
 	
     float cosPhi, cosTh;	
 	
-    *sinPhi = sincos(phi, &cosPhi);
+    *sinPhi = sincos(v * M_PI_F, &cosPhi);
 	
-    float sinTh = sincos(theta, &cosTh);
+    float sinTh = sincos(u * M_2PI_F - M_PI_F, &cosTh);
 	
     return (float3)(*sinPhi*sinTh, cosPhi, -*sinPhi*cosTh);
 }
