@@ -52,7 +52,6 @@ public:
     fr::float3 getWorldUp() { return worldUp; }
 
 private:
-    void loadObjModel(const std::string filename, ModelTransform* transform);
     void loadPlyModel(const std::string filename, ModelTransform* transform);
 
     void loadPBRTModel(const std::string filename);

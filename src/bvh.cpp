@@ -9,18 +9,20 @@ BVH::BVH(std::vector<RTTriangle>* tris, SplitMode mode)
 {
     m_triangles = tris;
     m_mode = mode;
+	
+	size_t tris_sz = m_triangles->size(); 
 
 	// Setup references for building
-	m_refs.resize(m_triangles->size());
-	for (int i = 0; i < m_triangles->size(); i++)
+	m_refs.resize(tris_sz);
+	for (int i = 0; i < tris_sz; i++)
 	{
 		m_refs[i] = TriRef(i, (*m_triangles)[i]);
 	}
 
 	// Shared vector to avoid reallocations
-	rightBoxes.resize(m_triangles->size());
+	rightBoxes.resize(tris_sz);
 
-	BuildNode root(0, (U32)m_triangles->size() - 1, -1);
+	BuildNode root(0, (U32)tris_sz - 1, -1);
 	m_build_nodes.push_back(root);
 	nodes++;
     
@@ -148,10 +150,18 @@ std::vector<Node> importNodes(std::ifstream &in)
 
 void BVH::importFrom(const std::string filename)
 {
+	char buffer [128*1024];
+	
 	clock_t time1, time2;
 	
 	time1 = clock();
-    std::ifstream infile(filename, std::ios::binary);
+	
+    std::ifstream infile;
+    infile.rdbuf()->pubsetbuf(buffer, sizeof(buffer));
+ 
+    infile.open(filename, std::ios::binary);
+    infile.rdbuf()->pubsetbuf(buffer, sizeof(buffer)); //for Visual Studio
+	
     m_indices = importIndices(infile);
     m_nodes = importNodes(infile);
 	
@@ -180,11 +190,19 @@ void exportNode(std::ofstream &out, const Node &n)
 
 /** Write BVH to file for later importing **/
 void BVH::exportTo(const std::string filename) const
-{	
+{
+	char buffer [128*1024];
+	
 	clock_t time1, time2;
 	
 	time1 = clock();
-    std::ofstream out(filename, std::ios::binary);
+	
+    std::ofstream out;
+	
+    out.rdbuf()->pubsetbuf(buffer, sizeof(buffer));
+ 
+    out.open(filename, std::ios::binary);
+    out.rdbuf()->pubsetbuf(buffer, sizeof(buffer)); //for Visual Studio
 
     if (out.good())
     {
@@ -334,9 +352,9 @@ bool BVH::spatialMedianSplit(BuildNode &n, SplitInfo &info)
 
 F32 BVH::sahCost(U32 N1, F32 area1, U32 N2, F32 area2, F32 area_root) const
 {
-	F32 lcost = N1 * area1 / area_root;
-	F32 rcost = N2 * area2 / area_root;
-	return 2 * sahParams.costBox + sahParams.costTri * (lcost + rcost);
+	F32 lcost = N1 * area1;
+	F32 rcost = N2 * area2;
+	return 2 * sahParams.costBox + sahParams.costTri * (lcost + rcost) * area_root;
 }
 
 // lookup[n] = AABB with last n + 1 triangles
@@ -353,6 +371,7 @@ void BVH::buildBoxLookup(BuildNode &n)
 bool BVH::sahSplit(BuildNode &n, SplitInfo &info)
 {
 	F32 parentArea = n.box.area();
+	F32 parentArea1 = 1.0f / parentArea;
 	assert(parentArea > 0.0f);
 
 	F32 parentCost = sahParams.costBox + n.spannedTris() * sahParams.costTri;
@@ -381,7 +400,7 @@ bool BVH::sahSplit(BuildNode &n, SplitInfo &info)
 
 			// New best split?
 			F32 cost = sahCost(leftCount, areaLeft,
-				spanSize - leftCount, areaRight, parentArea);
+				spanSize - leftCount, areaRight, parentArea1);
 
 			if (cost < info.cost)
 			{

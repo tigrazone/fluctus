@@ -12,19 +12,22 @@ SBVH::SBVH(std::vector<RTTriangle>* tris, SplitMode mode, ProgressView *progress
 	// Setup references. New ones are added (splitting)
 	// and removed (leaf node creation) during building
 	m_refs.resize(rootSpec.refs);
-	for (int i = 0; i < m_triangles->size(); i++)
+	
+	size_t tris_sz = m_triangles->size();
+	
+	for (size_t i = 0; i < tris_sz; i++)
 	{
 		m_refs[i] = TriRef(i, (*m_triangles)[i]);
 		rootSpec.box.expand(m_refs[i].box);
 	}
 
 	// Shared vector to avoid reallocations
-	rightBoxes.resize(std::max(m_triangles->size(), (size_t)NumSpatialBins) - 1);
+	rightBoxes.resize(std::max(tris_sz, (size_t)NumSpatialBins) - 1);
 	minOverlap = rootSpec.box.area() * splitAlpha;
 
 	// Perform building
 	SBVHNode* root = build(rootSpec, 0, 0.0f, 1.0f);
-	printf("\rSBVH builder: progress 100%% (%.2f%% duplicates)\n", metrics.duplicates * 100.0f / m_triangles->size());
+	printf("\rSBVH builder: progress 100%% (%.2f%% duplicates)\n", metrics.duplicates * 100.0f / tris_sz);
 
 	// Indices relative to LAST triangle => reverse
 	std::reverse(m_indices.begin(), m_indices.end());
@@ -44,7 +47,7 @@ SBVH::SBVH(std::vector<RTTriangle>* tris, SplitMode mode, ProgressView *progress
 		<< "Splits: " << metrics.splits << " (" << int(metrics.bad_splits / float(metrics.splits) * 100.0f) << "% bad)" << std::endl
 		<< "Depth: " << metrics.depth << std::endl
 		<< "Leaves: " << metrics.splits + 1 << std::endl
-		<< "Duplicates: " << metrics.duplicates << " (" << int(metrics.duplicates * 100.0f / m_triangles->size()) << "%)" << std::endl
+		<< "Duplicates: " << metrics.duplicates << " (" << int(metrics.duplicates * 100.0f / tris_sz) << "%)" << std::endl
 		<< "======================" << std::endl;
 }
 

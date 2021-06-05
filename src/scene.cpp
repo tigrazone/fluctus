@@ -52,6 +52,8 @@ std::string Scene::hashString()
 
 void Scene::loadModel(const std::string filename, ProgressView *progress, ModelTransform* transform)
 {
+	std::cout << std::endl;
+	
     // Starting time for model loading
     auto time1 = std::chrono::high_resolution_clock::now();
 
@@ -108,72 +110,6 @@ void Scene::loadModel(const std::string filename, ProgressView *progress, ModelT
         std::cout << "Mesh loaded in: "
             << std::chrono::duration<double, std::milli>(time2 - time1).count()
             << " ms" << std::endl;
-    }
-}
-
-
-// Possible face data formats include:
-//  `f v1/vt1/vn1 v2/vt2/vn2 ...`
-//  `f v1//vn1 v2//vn2 ...`
-//  `f v1 v2 ...`
-//  `f -v1 -v2 ...`
-inline void setFaceFormat(int &format, std::string &format_string, bool &negatives, std::istringstream &line)
-{
-    if (format > -1) return; // Only set once
-    
-    std::string block1;
-    line >> block1;
-
-    bool textures = false;
-    bool normals = false;
-    int ind = 0;
-    for (char c : block1)
-    {
-        if (c == '-')
-            negatives = true;
-        if (c == '/')
-            ind++;
-        else if (ind == 0)
-            continue;
-        else if (ind == 1)
-            textures = true;
-        else if (ind == 2)
-            normals = true;
-        else
-            std::cout << "Unknown OBJ face format, too many indices!" << std::endl;
-    }
-
-    if (textures && normals)
-    {
-        format = 0;
-        format_string = "f %u/%u/%u %u/%u/%u %u/%u/%u";
-    }
-    else if (!textures && normals)
-    {
-        format = 1;
-        format_string = "f %u//%u %u//%u %u//%u";
-    }
-    else if (textures && !normals)
-    {
-        format = 2;
-        format_string = "f %u/%u %u/%u %u/%u";
-    }
-    else
-    {
-        format = 3;
-        format_string = "f %u %u %u";
-    }
-
-    // Replace "%u" with "-%u"
-    if (negatives)
-    {
-        std::stringstream res;
-        for (char c : format_string)
-        {
-            if (c == '%') res << '-';
-            res << c;
-        }
-        format_string = res.str();
     }
 }
 
@@ -732,7 +668,7 @@ void Scene::loadPBFModel(const std::string filename, ModelTransform* transform)
         if (pbrt::ImageTexture * tex = dynamic_cast<pbrt::ImageTexture*>(tmap.get()))
             return tryImportTexture(unixifyPath(folderPath + tex->fileName), unixifyPath(tex->fileName));
         
-        std::cout << "Unsupported texture type" << std::endl;
+        std::cout << "Unsupported texture type" << (tmap.get())->toString() << std::endl;
         return (cl_int)-1;
     };
 
