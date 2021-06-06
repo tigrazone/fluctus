@@ -6,6 +6,7 @@
 #include "GLProgram.hpp"
 #include "utils.h"
 
+
 // For keys that need to be registered only once per press
 void keyPressCallback(GLFWwindow *window, int key, int scancode, int action, int mods)
 {
@@ -458,7 +459,7 @@ double PTWindow::calcFPS(double interval, std::string theWindowTitle)
             // Convert the fps value into a string using an output stringstream
             std::ostringstream stream;
             stream.precision(2);
-            stream << std::fixed << " | FPS: " << fps << " | Rays/s: " << MRps << "M";
+            stream << " | pass " << (Niteration+1) << std::fixed <<" | time " << (size_t)(tNow-STARTtime) << "s | FPS: " << fps << " | Rays/s: " << MRps << "M";
             std::string fpsString = stream.str();
  
             // Append the FPS and samples/sec to the window title details

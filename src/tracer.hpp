@@ -141,3 +141,6 @@ private:
     bool useWavefront;
     unsigned int maxRenderTime;
 };
+
+extern double STARTtime;
+extern size_t Niteration;

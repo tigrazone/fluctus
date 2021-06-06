@@ -8,6 +8,9 @@
 #include "utils.h"
 #include "geom.h"
 
+double STARTtime;
+size_t Niteration;
+
 namespace fr = FireRays;
 
 Tracer::Tracer(int width, int height) : useWavefront(Settings::getInstance().getUseWavefront())
@@ -186,8 +189,8 @@ inline void printStats(CLContext *ctx)
         lastPrinted = now;
         ctx->updateRenderPerf(delta); // updated perf can now be accessed from anywhere
         PerfNumbers perf = ctx->getRenderPerf();
-        printf("%.1fM primary, %.1fM extension, %.1fM shadow, %.1fM samples, total: %.1fMRays/s\r",
-            perf.primary, perf.extension, perf.shadow, perf.samples, perf.total);
+        printf("pass %d, %ds | %.1fM primary, %.1fM extension, %.1fM shadow, %.1fM samples, total: %.1fMRays/s\r",
+            Niteration + 1, (size_t)(now - STARTtime), perf.primary, perf.extension, perf.shadow, perf.samples, perf.total);
 
         // Reset stat counters (synchronously...)
         ctx->resetStats();
@@ -223,7 +226,12 @@ void Tracer::update()
         clctx->updateParams(params);
         paramsUpdatePending = false;
         iteration = 0; // accumulation reset
-        renderTimeStart = newT;
+		
+        renderTimeStart = newT;		
+		
+		//global info
+        Niteration = 0;
+		STARTtime = glfwGetTime();
     }
 
     if(maxRenderTime > 0 && newT >= renderTimeStart + maxRenderTime)
@@ -367,6 +375,7 @@ void Tracer::update()
 
     // Update iteration counter
     iteration++;
+    Niteration++;
 
     if (iteration % 1000 == 0)
         saveImage();
@@ -387,6 +396,8 @@ void Tracer::runBenchmark()
     auto resetRenderer = [&]()
     {
         iteration = 0;
+		Niteration = 0;
+		STARTtime = glfwGetTime();
         glFinish();
         clctx->updateParams(params);
         clctx->enqueueResetKernel(params);
@@ -494,6 +505,7 @@ void Tracer::runBenchmark()
                 logStats(scenes[i], currT - startT, deltaT);
 
             iteration++;
+			Niteration++;
             currT = glfwGetTime();
         }
 
@@ -613,6 +625,8 @@ void Tracer::runBenchmarkFromFile(std::string filename)
     {
         clctx->recompileKernels(false);
         iteration = 0;
+		Niteration = 0;
+		STARTtime = glfwGetTime();
         glFinish();
         clctx->updateParams(params);
         clctx->enqueueResetKernel(params);
@@ -760,6 +774,7 @@ void Tracer::runBenchmarkFromFile(std::string filename)
             }
 
             iteration++;
+            Niteration++;
             currentTime = glfwGetTime();
             // Save statistics every half a second to log for further processing
             double deltaTime = currentTime - lastLogTime;
