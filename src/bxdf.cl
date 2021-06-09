@@ -38,7 +38,7 @@ Spectrum bxdfSample(
 		float n1 = 1.0f, n2 = material->Ni;
 		if (backface) swap_m(n1, n2, float); // inside of material
 
-		float fr = schlickDielectric(cosI, n1, n2);		
+		float fr = fresnelDielectric(cosI, n1, n2);		
 		
 		float3 Kd = matGetAlbedo(material->Kd, hit->uvTex, material->map_Kd, textures, texData);
 		float3 Ks = matGetFloat3(material->Ks, hit->uvTex, material->map_Ks, textures, texData);
@@ -131,7 +131,7 @@ Spectrum bxdfEval(
 		float n1 = 1.0f, n2 = material->Ni;
 		if (backface) swap_m(n1, n2, float); // inside of material
 
-		float fr = schlickDielectric(cosI, n1, n2);		
+		float fr = fresnelDielectric(cosI, n1, n2);		
 		
 		float3 Kd = matGetAlbedo(material->Kd, hit->uvTex, material->map_Kd, textures, texData);
 		float3 Ks = matGetFloat3(material->Ks, hit->uvTex, material->map_Ks, textures, texData);
@@ -225,7 +225,7 @@ float bxdfPdf(
 		float n1 = 1.0f, n2 = material->Ni;
 		if (backface) swap_m(n1, n2, float); // inside of material
 
-		float fr = schlickDielectric(cosI, n1, n2);		
+		float fr = fresnelDielectric(cosI, n1, n2);		
 		
 		float3 Kd = matGetAlbedo(material->Kd, hit->uvTex, material->map_Kd, textures, texData);
 		float3 Ks = matGetFloat3(material->Ks, hit->uvTex, material->map_Ks, textures, texData);
