@@ -9,10 +9,12 @@
  */
 
 // Use proposed mapping from phong exponent (from mtl) to Beckmann alpha
+/*
 inline float toRoughness(float shininess)
 {
 	return sqrt(2.0f / (2.0f + shininess));
 }
+*/
 
 // Importence sample lobe, eq. 35, 36
 float3 ggxSampleLobe(float alpha, float3 dirIn, float3 N, uint *seed)
@@ -71,27 +73,27 @@ float ggxD(float alpha, float3 n, float3 m)
 
 	// tan^2 = sin^2 / cos^2
 	float nDotMSq = nDotM * nDotM;
-	float tanSq = nDotM != 0.0f ? ((1.0f - nDotMSq) / nDotMSq) : 0.0f;
+	float tanSq = ((1.0f - nDotMSq) / nDotMSq);
 
 	float aSq = alpha * alpha;
 	float denom = M_PI_F * nDotMSq * nDotMSq * (aSq + tanSq) * (aSq + tanSq);
-	return denom > 0.0f ? (aSq / denom) : 0.0f;
+	return (aSq / denom);
 }
 
 // See eq. 24, 14
 float ggxPdfReflect(float alpha, float3 dirOut, float3 N, float3 H)
 {
-	float nDotH = fabs(dot(N, H));
-	float oDotH = fabs(dot(dirOut, H));
+	float nDotH = (dot(N, H));
+	float oDotH = (dot(dirOut, H));
 	//float jInv = 4.0f * oDotH; // inverse of H to dirOut Jacobian (eq. 14)
 	//return jInv == 0.0f ? 0.0f : ggxD(alpha, N, H) * nDotH / jInv;
-	return oDotH == 0.0f ? 0.0f : ggxD(alpha, N, H) * nDotH / (4.0f * oDotH);
+	return oDotH == 0.0f ? 0.0f : ggxD(alpha, N, H) * fabs(nDotH * 0.25f / oDotH);
 }
 
 float3 sampleGGXReflect(Hit *hit, Material *mat, global TexDescriptor *textures, global uchar *texData, float3 dirIn, float3 *dirOut, float *pdfW, uint *seed)
 {
 	// Setup parameters
-	float alpha = toRoughness(mat->Ns);
+	float alpha = (mat->Ns);
 	
 	float3 dirInN = -dirIn;
 	
@@ -118,7 +120,7 @@ float3 sampleGGXReflect(Hit *hit, Material *mat, global TexDescriptor *textures,
 float3 evalGGXReflect(Hit *hit, Material *mat, global TexDescriptor *textures, global uchar *texData, float3 dirIn, float3 dirOut)
 {
 	// Setup parameters
-	float alpha = toRoughness(mat->Ns);
+	float alpha = (mat->Ns);
 	float3 dirInN = -dirIn;
 	
 	// Calculate halfway vector
@@ -139,7 +141,7 @@ float3 evalGGXReflect(Hit *hit, Material *mat, global TexDescriptor *textures, g
 
 float pdfGGXReflect(Hit *hit, Material *mat, float3 dirIn, float3 dirOut)
 {
-	float alpha = toRoughness(mat->Ns);
+	float alpha = (mat->Ns);
 	float3 H = normalize(dirOut - dirIn);
 	return ggxPdfReflect(alpha, dirOut, hit->N, H);
 }
@@ -160,7 +162,7 @@ float3 sampleGGXRefract(Hit *hit, Material *mat, bool backface, global TexDescri
 	
 	float3 dirInN = -dirIn;
 
-	float alpha = toRoughness(mat->Ns);
+	float alpha = (mat->Ns);
 	float etaI = 1.0f, etaO = mat->Ni; // assume air-dielectric interface
 	if (backface) swap_m(etaI, etaO, float);
 	float iDotN = dot((dirInN), hit->N);
@@ -230,7 +232,7 @@ float3 evalGGXRefract(Hit *hit, Material *mat, bool backface, global TexDescript
 	// Setup parameters
 	float3 dirInN = -dirIn;
 
-	float alpha = toRoughness(mat->Ns);
+	float alpha = (mat->Ns);
 	float etaI = 1.0f, etaO = mat->Ni; // assume air-dielectric interface
 	if (backface) swap_m(etaI, etaO, float);
 	float iDotN = dot((dirInN), hit->N);
@@ -284,7 +286,7 @@ float3 evalGGXRefract(Hit *hit, Material *mat, bool backface, global TexDescript
 
 float pdfGGXRefract(Hit *hit, Material *mat, bool backface, float3 dirIn, float3 dirOut)
 {
-	float alpha = toRoughness(mat->Ns);
+	float alpha = (mat->Ns);
 	float etaI = 1.0f, etaO = mat->Ni;
 	
 	if (!backface)

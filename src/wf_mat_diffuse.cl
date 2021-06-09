@@ -30,8 +30,8 @@ kernel void wavefrontDiffuse(
     float3 dirIn = ReadFloat3(dir, tasks); // points toward surface!
     float3 L = ReadFloat3(shadowDir, tasks);
 
-    const float3 bsdfNEE = bxdfEval(&hit, &mat, backface, textures, texData, dirIn, L);
-    const float bsdfPdfW = max(0.0f, bxdfPdf(&hit, &mat, backface, textures, texData, dirIn, L));
+    const float3 bsdfNEE = bxdfEval(&hit, &mat, backface, textures, texData, dirIn, L, &seed);
+    const float bsdfPdfW = max(0.0f, bxdfPdf(&hit, &mat, backface, textures, texData, dirIn, L, &seed));
     WriteFloat3(lastBsdf, tasks, bsdfNEE);
     WriteF32(lastPdfImplicit, tasks, bsdfPdfW);
     

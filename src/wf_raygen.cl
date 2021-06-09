@@ -28,38 +28,41 @@ kernel void genRays(
     // Camera plane is 1 unit away, by convention
     // Camera points in the negative z-direction
     float x = (float)(pixelIdx % params->width);
-    float y = (float)(pixelIdx / params->width);
+    float y = (float)(pixelIdx) * params->width1;
 
     // Jittered AA
     x += rand(&seed);
     y += rand(&seed);
 
     // NDC-space, [0,1]x[0,1]
-    float NDCx = x / params->width;
-    float NDCy = y / params->height;
+    float NDCx = x * params->width1;
+    float NDCy = y * params->height1;
 
     // Screen space, [-1,1]x[-1,1]
     float SCRx = NDCx + NDCx - 1.0f;
     float SCRy = NDCy + NDCy - 1.0f;
 
     // Aspect ratio fix applied horizontally
-    SCRx *= (float)params->width / params->height;
+    SCRx *= (float)params->width * params->height1;
 
     // Screen space coordinates scaled based on fov
-    float scale = tan(toRad(0.5f * params->camera.fov)); // half of width
-    SCRx *= scale;
-    SCRy *= scale;
+    //float scale = tan(toRad(0.5f * params->camera.fov)); // half of width
+    SCRx *= params->camera.fovSCALE;
+    SCRy *= params->camera.fovSCALE;
 
     // World space coorinates of pixel
     float3 rayOrig = params->camera.pos;
     float3 rayTarget = rayOrig + params->camera.right * SCRx + params->camera.up * SCRy + params->camera.dir;
     float3 rayDirection = normalize(rayTarget - rayOrig);
 
-    // Depth of field
-    float3 fp = params->camera.pos + rayDirection * params->camera.focalDist;
-    float2 rnd = uniformSampleDisk(&seed);
-    rayOrig += params->worldRadius * params->camera.apertureSize * (params->camera.right * rnd.x + params->camera.up * rnd.y);
-    rayDirection = normalize(fp - rayOrig);
+	if(params->camera.apertureSize > 0.0f) 
+	{
+		// Depth of field
+		float3 fp = params->camera.pos + rayDirection * params->camera.focalDist;
+		float2 rnd = uniformSampleDisk(&seed);
+		rayOrig += params->worldRadius * params->camera.apertureSize * (params->camera.right * rnd.x + params->camera.up * rnd.y);
+		rayDirection = normalize(fp - rayOrig);
+	}
 
     // Construct camera ray
     WriteFloat3(orig, tasks, rayOrig);

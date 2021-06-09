@@ -95,9 +95,9 @@ kernel void sampleBsdf(
             // Compute contribution
             if (!occluded && directPdfW != 0.0f)
             {
-                const float3 brdf = bxdfEval(&hit, &mat, backface, textures, texData, r.dir, L);
+                const float3 brdf = bxdfEval(&hit, &mat, backface, textures, texData, r.dir, L, &seed);
                 float cosTh = max(0.0f, dot(L, hit.N)); // cos at surface
-                float bsdfPdfW = max(0.0f, bxdfPdf(&hit, &mat, backface, textures, texData, r.dir, L));
+                float bsdfPdfW = max(0.0f, bxdfPdf(&hit, &mat, backface, textures, texData, r.dir, L, &seed));
 
                 const float3 T = ReadFloat3(T, tasks);
                 const float3 envMapLi = evalEnvMapDir(envMap, L) * params->envMapStrength;
@@ -131,10 +131,10 @@ kernel void sampleBsdf(
             float cosLight = max(dot(params->areaLight.N, -L), 0.0f); // only frontside hits count
             if (!occluded && cosLight > 0.0f)
             {
-                const float3 brdf = bxdfEval(&hit, &mat, backface, textures, texData, r.dir, L);
+                const float3 brdf = bxdfEval(&hit, &mat, backface, textures, texData, r.dir, L, &seed);
                 float cosTh = max(0.0f, dot(L, hit.N)); // cos at surface
                 float directPdfW = pdfAtoW(directPdfA, lenL, cosLight); // 'how small area light looks'
-                float bsdfPdfW = max(0.0f, bxdfPdf(&hit, &mat, backface, textures, texData, r.dir, L));
+                float bsdfPdfW = max(0.0f, bxdfPdf(&hit, &mat, backface, textures, texData, r.dir, L, &seed));
 				
                 const float3 T = ReadFloat3(T, tasks);
 				const float3 contrib = brdf * T * params->areaLight.E * cosTh / (lightPickProb * directPdfW + (params->sampleImpl)*bsdfPdfW);

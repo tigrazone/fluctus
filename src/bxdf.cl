@@ -24,8 +24,70 @@ Spectrum bxdfSample(
 	float3 *dirOut,
 	float *pdfW,
 	uint *randSeed)
-{
-	switch(material->type)
+{	
+	cl_int mtype = material->type;
+	
+	if(mtype == BXDF_MIXED) {
+		mtype = BXDF_DIFFUSE;
+	}
+	
+	if(mtype == BXDF_MIXED) {
+		float3 one_three_float3 = ((float3) (1.0f, 1.0f, 1.0f)) / 3.0f;		
+
+		float cosI = - dot(normalize(dirIn), hit->N);
+		float n1 = 1.0f, n2 = material->Ni;
+		if (backface) swap_m(n1, n2, float); // inside of material
+
+		float fr = schlickDielectric(cosI, n1, n2);		
+		
+		float3 Kd = matGetAlbedo(material->Kd, hit->uvTex, material->map_Kd, textures, texData);
+		float3 Ks = matGetFloat3(material->Ks, hit->uvTex, material->map_Ks, textures, texData);
+		float3 Kt = material->Kt; 
+		float3 Ke = material->Ke; 
+		
+          // Compute probabilities for each surface interaction.
+          // Specular is just regular reflectiveness * fresnel.
+          float rhoS = dot(one_three_float3,  Ks) * fr;
+          // If we don't have a specular reflection, choose either diffuse or
+          // transmissive
+          // Mix them based on the dissolve value of the material
+          float rhoD = dot(one_three_float3, Kd) *
+                       (1.0f - fr) * (1.0f - material->d);
+          float rhoR = dot(one_three_float3, Kt) *
+                       (1.0f - fr) * material->d;
+
+          float rhoE = dot(one_three_float3, Ke);
+
+          // Normalize probabilities so they sum to 1.0
+          float totalrho = rhoS + rhoD + rhoR + rhoE;
+          float totalrho1 = native_recip(totalrho);		  
+
+          rhoS *= totalrho1;
+          rhoD *= totalrho1;
+          rhoR *= totalrho1;
+          rhoE *= totalrho1;
+		  
+		  float rnd = rand(randSeed);
+		  
+          // REFLECT glossy
+          if (rnd < rhoS) {
+			  mtype = BXDF_IDEAL_REFLECTION;
+		  }
+          // REFLECT diffuse
+          else if (rnd < rhoS + rhoD) {
+			mtype = BXDF_DIFFUSE;
+          }
+          // REFRACT
+          else if (rnd < rhoD + rhoS + rhoR) {
+			  mtype = BXDF_IDEAL_DIELECTRIC;
+			  }
+          // EMIT
+          else {
+			  mtype = BXDF_EMISSIVE;
+		  }
+	}
+	
+	switch(mtype)
 	{
 		case BXDF_DIFFUSE:
 			return sampleDiffuse(hit, material, textures, texData, dirOut, pdfW, randSeed);
@@ -54,9 +116,71 @@ Spectrum bxdfEval(
 	global TexDescriptor *textures,
 	global uchar *texData,
 	float3 dirIn,
-	float3 dirOut)
-{
-	switch(material->type)
+	float3 dirOut,
+	uint *randSeed)
+{	
+	cl_int mtype = material->type;
+	if(mtype == BXDF_MIXED) {
+		mtype = BXDF_DIFFUSE;
+	}	
+	
+	if(mtype == BXDF_MIXED) {
+		float3 one_three_float3 = ((float3) (1.0f, 1.0f, 1.0f)) / 3.0f;		
+
+		float cosI = - dot(normalize(dirIn), hit->N);
+		float n1 = 1.0f, n2 = material->Ni;
+		if (backface) swap_m(n1, n2, float); // inside of material
+
+		float fr = schlickDielectric(cosI, n1, n2);		
+		
+		float3 Kd = matGetAlbedo(material->Kd, hit->uvTex, material->map_Kd, textures, texData);
+		float3 Ks = matGetFloat3(material->Ks, hit->uvTex, material->map_Ks, textures, texData);
+		float3 Kt = material->Kt; 
+		float3 Ke = material->Ke; 
+		
+          // Compute probabilities for each surface interaction.
+          // Specular is just regular reflectiveness * fresnel.
+          float rhoS = dot(one_three_float3,  Ks) * fr;
+          // If we don't have a specular reflection, choose either diffuse or
+          // transmissive
+          // Mix them based on the dissolve value of the material
+          float rhoD = dot(one_three_float3, Kd) *
+                       (1.0f - fr) * (1.0f - material->d);
+          float rhoR = dot(one_three_float3, Kt) *
+                       (1.0f - fr) * material->d;
+
+          float rhoE = dot(one_three_float3, Ke);
+
+          // Normalize probabilities so they sum to 1.0
+          float totalrho = rhoS + rhoD + rhoR + rhoE;
+          float totalrho1 = native_recip(totalrho);		  
+
+          rhoS *= totalrho1;
+          rhoD *= totalrho1;
+          rhoR *= totalrho1;
+          rhoE *= totalrho1;
+		  
+		  float rnd = rand(randSeed);
+		  
+          // REFLECT glossy
+          if (rnd < rhoS) {
+			  mtype = BXDF_IDEAL_REFLECTION;
+		  }
+          // REFLECT diffuse
+          else if (rnd < rhoS + rhoD) {
+			mtype = BXDF_DIFFUSE;
+          }
+          // REFRACT
+          else if (rnd < rhoD + rhoS + rhoR) {
+			  mtype = BXDF_IDEAL_DIELECTRIC;
+			  }
+          // EMIT
+          else {
+			  mtype = BXDF_EMISSIVE;
+		  }
+	}
+	
+	switch(mtype)
 	{
 		case BXDF_DIFFUSE:
 			return evalDiffuse(hit, material, textures, texData, dirIn, dirOut);
@@ -71,6 +195,7 @@ Spectrum bxdfEval(
 		case BXDF_IDEAL_DIELECTRIC:
 			return evalIdealDielectric();
 		case BXDF_EMISSIVE:
+			return material->Ke;
 			return (float3)(1.0f, 1.0f, 1.0f);
 	}
 	
@@ -85,9 +210,71 @@ float bxdfPdf(
 	global TexDescriptor *textures,
 	global uchar *texData,
 	float3 dirIn,
-	float3 dirOut)
-{
-	switch(material->type)
+	float3 dirOut,
+	uint *randSeed)
+{	
+	cl_int mtype = material->type;
+	if(mtype == BXDF_MIXED) {
+		mtype = BXDF_DIFFUSE;
+	}
+	
+	if(mtype == BXDF_MIXED) {
+		float3 one_three_float3 = ((float3) (1.0f, 1.0f, 1.0f)) / 3.0f;		
+
+		float cosI = - dot(normalize(dirIn), hit->N);
+		float n1 = 1.0f, n2 = material->Ni;
+		if (backface) swap_m(n1, n2, float); // inside of material
+
+		float fr = schlickDielectric(cosI, n1, n2);		
+		
+		float3 Kd = matGetAlbedo(material->Kd, hit->uvTex, material->map_Kd, textures, texData);
+		float3 Ks = matGetFloat3(material->Ks, hit->uvTex, material->map_Ks, textures, texData);
+		float3 Kt = material->Kt; 
+		float3 Ke = material->Ke; 
+		
+          // Compute probabilities for each surface interaction.
+          // Specular is just regular reflectiveness * fresnel.
+          float rhoS = dot(one_three_float3,  Ks) * fr;
+          // If we don't have a specular reflection, choose either diffuse or
+          // transmissive
+          // Mix them based on the dissolve value of the material
+          float rhoD = dot(one_three_float3, Kd) *
+                       (1.0f - fr) * (1.0f - material->d);
+          float rhoR = dot(one_three_float3, Kt) *
+                       (1.0f - fr) * material->d;
+
+          float rhoE = dot(one_three_float3, Ke);
+
+          // Normalize probabilities so they sum to 1.0
+          float totalrho = rhoS + rhoD + rhoR + rhoE;
+          float totalrho1 = native_recip(totalrho);		  
+
+          rhoS *= totalrho1;
+          rhoD *= totalrho1;
+          rhoR *= totalrho1;
+          rhoE *= totalrho1;
+		  
+		  float rnd = rand(randSeed);
+		  
+          // REFLECT glossy
+          if (rnd < rhoS) {
+			  mtype = BXDF_IDEAL_REFLECTION;
+		  }
+          // REFLECT diffuse
+          else if (rnd < rhoS + rhoD) {
+			mtype = BXDF_DIFFUSE;
+          }
+          // REFRACT
+          else if (rnd < rhoD + rhoS + rhoR) {
+			  mtype = BXDF_IDEAL_DIELECTRIC;
+			  }
+          // EMIT
+          else {
+			  mtype = BXDF_EMISSIVE;
+		  }
+	}
+	
+	switch(mtype)
 	{
 		case BXDF_DIFFUSE:
 			return pdfDiffuse(hit, dirOut);

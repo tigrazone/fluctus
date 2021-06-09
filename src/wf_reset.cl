@@ -44,7 +44,7 @@ kernel void reset(
     WriteF32(lastPdfImplicit, tasks, 0.0f);
     WriteF32(lastCosTh, tasks, 0.0f);
     WriteF32(lastLightPickProb, tasks, 1.0f);
-    WriteF32(shadowRayLen, tasks, 2.0f * params->worldRadius);
+    WriteF32(shadowRayLen, tasks, params->worldRadius + params->worldRadius);
     WriteU32(backfaceHit, tasks, 0);
     WriteU32(shadowRayBlocked, tasks, 1);
     WriteU32(pixelIndex, tasks, 0);

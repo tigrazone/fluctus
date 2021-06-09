@@ -61,7 +61,7 @@ inline float fresnelDielectric1(float cosThI, float etaI, float etaT, float *cos
 	return 0.5f * (parl * parl + perp * perp);
 }
 
-/*
+
 // Schlick's approximation for dielectrics
 inline float schlickDielectric(float cosThI, float etaI, float etaT)
 {
@@ -75,7 +75,7 @@ inline float schlickDielectric(float cosThI, float etaI, float etaT)
 	float c = 1.0f - fabs(cosThI);
 	return r0 + (1.0f - r0) * native_powr(c, 5.0f);
 }
-*/
+
 
 /*
 // Fresnel for conductor-dielectric interface
@@ -97,7 +97,7 @@ inline float3 fresnelConductor(float cosThetaI, float3 etai, float3 etat, float3
     float3 a2plusb2 = sqrt(t0 * t0 + 4.0f * eta2 * etak2);
     float3 t1 = a2plusb2 + cosThetaI2;
     float3 a = sqrt(0.5f * (a2plusb2 + t0));
-    float3 t2 = 2.0f * cosThetaI * a;
+    float3 t2 = (cosThetaI + cosThetaI) * a;
     float3 Rs = (t1 - t2) / (t1 + t2);
 
     float3 t3 = cosThetaI2 * a2plusb2 + sinThetaI2 * sinThetaI2;

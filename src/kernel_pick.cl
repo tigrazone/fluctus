@@ -16,12 +16,12 @@ kernel void pick(global RenderParams *params, global Triangle *tris, global GPUN
     float SCRy = NDCy + NDCy - 1.0f;
 
     // Aspect ratio fix applied horizontally
-    SCRx *= (float)params->width / params->height;
+    SCRx *= (float)params->width * params->height1;
 
     // Screen space coordinates scaled based on fov
-    float scale = tan(toRad(0.5f * params->camera.fov)); // half of width
-    SCRx *= scale;
-    SCRy *= scale;
+    //float scale = tan(toRad(0.5f * params->camera.fov)); // half of width
+    SCRx *= params->camera.fovSCALE;
+    SCRy *= params->camera.fovSCALE;
 
     // World space coorinates of pixel
     float3 rayTarget = params->camera.pos + params->camera.right * SCRx + params->camera.up * SCRy + params->camera.dir;

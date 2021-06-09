@@ -60,6 +60,8 @@ void Tracer::resetParams(int width, int height)
     params.useRoulette = cl_uint(s.getUseRussianRoulette());
     params.wfSeparateQueues = cl_uint(s.getUseSeparateQueues());
     params.maxSpp = cl_uint(s.getMaxSpp());
+    params.width1 = 1.0f /(float) params.width;
+    params.height1 = 1.0f /(float) params.height;
 }
 
 // Run whenever a scene is loaded
@@ -221,6 +223,9 @@ void Tracer::update()
         window->getFBSize(params.width, params.height);
         params.width = static_cast<unsigned int>(params.width * renderScale);
         params.height = static_cast<unsigned int>(params.height * renderScale);
+		
+		params.width1 = 1.0f /(float) params.width;
+		params.height1 = 1.0f /(float) params.height;
 
         updateGUI();
         clctx->updateParams(params);
@@ -390,6 +395,10 @@ void Tracer::runBenchmark()
     params.height = 1024;
     Settings::getInstance().setRenderScale(1.0f);
     window->setSize(params.width, params.height);
+	
+    params.width1 = 1.0f /(float) params.width;
+    params.height1 = 1.0f /(float) params.height;
+	
     updateGUI();
 
     // Called when scene changes
@@ -987,6 +996,11 @@ void Tracer::iterateStateItems(StateIO mode)
 		rw(cameraRotation.y);
 		rw(cameraSpeed);
 		rw(params.camera.fov);
+		
+		if(mode == StateIO::READ) {
+			params.camera.fovSCALE = tan(toRad(0.5f * params.camera.fov));
+		}
+		
         rw(params.camera.focalDist);
         rw(params.camera.apertureSize);
 		rwVec(params.camera.dir);
@@ -1107,6 +1121,7 @@ void Tracer::initCamera()
     cam.up = s.up;
     cam.dir = s.dir;
     cam.fov = s.fov;
+	cam.fovSCALE = tan(toRad(0.5f * cam.fov));
     cam.apertureSize = s.apertureSize;
     cam.focalDist = s.focalDist;
 

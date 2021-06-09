@@ -10,6 +10,11 @@
 
 #include <set>
 
+inline float toRoughness(float shininess)
+{
+	return sqrt(2.0f / (2.0f + shininess));
+}
+
 Scene::Scene()
 {
     // Init default material
@@ -250,8 +255,10 @@ void Scene::loadObjWithMaterials(const std::string filePath, ProgressView *progr
         m.Kd = fr::float3(t_mat.diffuse[0], t_mat.diffuse[1], t_mat.diffuse[2]);
         m.Ks = fr::float3(t_mat.specular[0], t_mat.specular[1], t_mat.specular[2]);
         m.Ke = fr::float3(t_mat.emission[0], t_mat.emission[1], t_mat.emission[2]);
+        m.Kt = fr::float3(t_mat.transmittance[0], t_mat.transmittance[1], t_mat.transmittance[2]);
         m.Ns = t_mat.shininess;
         m.Ni = t_mat.ior;
+        m.d = t_mat.dissolve;
         m.map_Kd = tryImportTexture(unixifyPath(folderPath + t_mat.diffuse_texname), unixifyPath(t_mat.diffuse_texname));
         m.map_Ks = tryImportTexture(unixifyPath(folderPath + t_mat.specular_texname), unixifyPath(t_mat.specular_texname));
         m.map_N = tryImportTexture(unixifyPath(folderPath + t_mat.bump_texname), unixifyPath(t_mat.bump_texname)); // map_bump in mtl treated as normal map
@@ -266,22 +273,49 @@ void Scene::loadObjWithMaterials(const std::string filePath, ProgressView *progr
 		components += (sum_ks > 0.0f);
 		components += (sum_kt > 0.0f);
 		
-		if(components > 1 && 0) {
-			m.type = BXDF_MIXED;
-		}
-		
-		if(m.type == BXDF_DIFFUSE && sum_kt>0.0f && sum_kd<0.00000001f) {
+		if(m.type == BXDF_DIFFUSE && sum_kt>0.0f && sum_kd<0.00000001f && (sum_ks<0.00000001f || 
+            (
+                fabs(sum_ks - sum_kt) < 0.01f &&
+                fabs(t_mat.transmittance[0] - m.Ks[0]) < 0.01f &&
+                fabs(t_mat.transmittance[1] - m.Ks[1]) < 0.01f &&
+                fabs(t_mat.transmittance[2] - m.Ks[2]) < 0.01f 
+             )
+                )
+            )
+        {
 			m.type = BXDF_IDEAL_DIELECTRIC;
 			m.Ks = fr::float3(t_mat.transmittance[0], t_mat.transmittance[1], t_mat.transmittance[2]);
+            printf("* %s changed to BXDF_IDEAL_DIELECTRIC\n", t_mat.name.c_str());
 		}
 		
-		if(m.type == BXDF_DIFFUSE && sum_ks>0.0f && sum_kd<0.00000001f) {
+		if(m.type == BXDF_DIFFUSE && sum_ks>0.0f && sum_kd<0.00000001f && sum_kt<0.00000001f) {
 			m.type = BXDF_GLOSSY;
+            printf("* %s changed to BXDF_GLOSSY\n", t_mat.name.c_str());
+		}
+		
+		if(m.type == BXDF_DIFFUSE && sum_ks>0.0f && sum_kd>0.0f && (m.Ni>1.0f && m.Ns>1.0f)) {
+			m.type = BXDF_GGX_ROUGH_REFLECTION;
+            printf("* %s changed to BXDF_GGX_ROUGH_REFLECTION\n", t_mat.name.c_str());
+            printf("* Ns=%.2f Ni=%.2f\n", m.Ns, m.Ni);
+		}
+		
+		if(m.type == BXDF_DIFFUSE && sum_ks>0.0f && sum_kt>0.0f && (m.Ni > 1.0f && m.Ns > 1.0f)) {
+			m.type = BXDF_GGX_ROUGH_DIELECTRIC;
+            printf("* %s changed to BXDF_GGX_ROUGH_DIELECTRIC\n", t_mat.name.c_str());
+            printf("* Ns=%.2f Ni=%.2f\n", m.Ns, m.Ni);
 		}
 		
 		if(m.Ke[0]>0.0f || m.Ke[1]>0.0f || m.Ke[2]>0.0f) {
 			m.type = BXDF_EMISSIVE;
+            printf("* %s changed to BXDF_EMISSIVE\n", t_mat.name.c_str());
 		}
+
+        if (components > 1 && m.type == BXDF_DIFFUSE) {
+            m.type = BXDF_MIXED;
+            printf("* %s changed to BXDF_MIXED\n", t_mat.name.c_str());
+        }
+		
+		m.Ns = toRoughness(m.Ns);
 
         materials.push_back(m);
         materialTypes |= m.type;
@@ -759,7 +793,9 @@ void Scene::loadPBFModel(const std::string filename, ModelTransform* transform)
         else
         {
             std::cout << "Unhandled material type " << t_mat.get()->toString()<< std::endl;
-        }
+        }		
+		
+		m.Ns = toRoughness(m.Ns);
 
         materials.push_back(m);
         materialTypes |= m.type;

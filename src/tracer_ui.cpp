@@ -306,6 +306,7 @@ void Tracer::addCameraSettings(Widget *parent)
     // FOV
     FloatWidget* fovWidget = addFloatWidget(camPopup, "FOV", "FOV", 0.01f, 120.0f, [this](float val) {
         params.camera.fov = cl_float(val);
+        params.camera.fovSCALE = tan(toRad(0.5f * params.camera.fov));
         paramsUpdatePending = true;
     });
 

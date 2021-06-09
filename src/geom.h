@@ -25,14 +25,16 @@ typedef FireRays::float2 vfloat2;
 #endif
 
 #define PI (3.14159265358979323846f)
+#define PI_180 (0.01745329251994329576923690768489f)
+#define PI_180_INV (57.295779513082320876798154814105f)
 #define M_INV_PI (0.3183098861837907f)
 #define M_2PI_F (6.2831853071795864f)
 #define M_2PI_PI_F (19.739208802178717237668981999752f)
 #define INV_M_2PI_PI_F (0.05066059182116888572193973160486f)
 #define INV_TWO_PI (0.1591549430918954f)
 
-#define toRad(deg) (deg * PI / 180)
-#define toDeg(rad) (rad * 180 / PI)
+#define toRad(deg) (deg * PI_180)
+#define toDeg(rad) (rad * PI_180_INV)
 // Path Length for RR
 #define MIN_PATH_LENGTH 5
 
@@ -130,8 +132,10 @@ typedef struct
     vfloat3 Kd;     // diffuse reflectivity
     vfloat3 Ks;     // specular reflectivity 
     vfloat3 Ke;     // emission
+    vfloat3 Kt;     // transmitance
     cl_float Ns;   // specular exponent (shininess), normally in [0, 1000]
     cl_float Ni;   // index of refraction
+    cl_float d;    // dissolve
     cl_int map_Kd; // diffuse texture descriptor idx
     cl_int map_Ks; // specular texture descriptor idx
     cl_int map_N;  // normal texture descriptor idx
@@ -165,6 +169,7 @@ typedef struct
     vfloat3 up;      // 16B
     vfloat3 right;   // 16B
     cl_float fov;   // 4B
+    cl_float fovSCALE;   // 4B
     cl_float apertureSize; // DoF
     cl_float focalDist;    // DoF
 } Camera;
@@ -193,6 +198,8 @@ typedef struct
     cl_uint wfSeparateQueues;
     cl_uint maxSpp;
     cl_float worldRadius;
+    cl_float width1;
+    cl_float height1;
 } RenderParams;
 
 
