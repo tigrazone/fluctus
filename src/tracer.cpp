@@ -883,6 +883,18 @@ void Tracer::selectScene(std::string file)
 
     scene.reset(new Scene());
     scene->loadModel(file, window->getProgressView());
+	
+	if(scene->updateCamera) 
+	{
+		params.camera = scene->cam;
+		scene->updateCamera = false;
+		cameraRotation.x = 0; 
+		cameraRotation.y = 0;
+		cameraSpeed = 1.0f;
+        // updateCamera();
+		printf("*** camera updated from file\n");
+	}
+	
     if (envMap)
     {
         scene->setEnvMap(envMap);
@@ -1354,17 +1366,25 @@ void Tracer::pollKeys(float deltaT)
     
     Camera &cam = params.camera;
 
-    check(GLFW_KEY_W,           cam.pos += deltaT * cameraSpeed * 10 * cam.dir);
-    check(GLFW_KEY_A,           cam.pos -= deltaT * cameraSpeed * 10 * cam.right);
-    check(GLFW_KEY_S,           cam.pos -= deltaT * cameraSpeed * 10 * cam.dir);
-    check(GLFW_KEY_D,           cam.pos += deltaT * cameraSpeed * 10 * cam.right);
-    check(GLFW_KEY_R,           cam.pos += deltaT * cameraSpeed * 10 * cam.up);
-    check(GLFW_KEY_F,           cam.pos -= deltaT * cameraSpeed * 10 * cam.up);
+    check(GLFW_KEY_W, cam.pos += deltaT * cameraSpeed * 10 * cam.dir;printf("pos x=%.4f y=%.4f z=%.4f\n", cam.pos.x, cam.pos.y, cam.pos.z));
+    check(GLFW_KEY_A,           cam.pos -= deltaT * cameraSpeed * 10 * cam.right; printf("pos x=%.4f y=%.4f z=%.4f\n", cam.pos.x, cam.pos.y, cam.pos.z));
+    check(GLFW_KEY_S,           cam.pos -= deltaT * cameraSpeed * 10 * cam.dir; printf("pos x=%.4f y=%.4f z=%.4f\n", cam.pos.x, cam.pos.y, cam.pos.z));
+    check(GLFW_KEY_D,           cam.pos += deltaT * cameraSpeed * 10 * cam.right; printf("pos x=%.4f y=%.4f z=%.4f\n", cam.pos.x, cam.pos.y, cam.pos.z));
+    check(GLFW_KEY_R,           cam.pos += deltaT * cameraSpeed * 10 * cam.up; printf("pos x=%.4f y=%.4f z=%.4f\n", cam.pos.x, cam.pos.y, cam.pos.z));
+    check(GLFW_KEY_F,           cam.pos -= deltaT * cameraSpeed * 10 * cam.up; printf("pos x=%.4f y=%.4f z=%.4f\n", cam.pos.x, cam.pos.y, cam.pos.z));
 	
-    check(GLFW_KEY_UP,          cameraRotation.y -= 75 * deltaT);
-    check(GLFW_KEY_DOWN,        cameraRotation.y += 75 * deltaT);
-    check(GLFW_KEY_LEFT,        cameraRotation.x -= 75 * deltaT);
-    check(GLFW_KEY_RIGHT,       cameraRotation.x += 75 * deltaT);
+	/*
+	check(GLFW_KEY_UP,          cameraRotation.y -= 75 * deltaT;printf("cameraRotation x=%.2f y=%.2f\n", cameraRotation.x, cameraRotation.y));
+    check(GLFW_KEY_DOWN,        cameraRotation.y += 75 * deltaT;printf("cameraRotation x=%.2f y=%.2f\n", cameraRotation.x, cameraRotation.y));
+    check(GLFW_KEY_LEFT,        cameraRotation.x -= 75 * deltaT;printf("cameraRotation x=%.2f y=%.2f\n", cameraRotation.x, cameraRotation.y));
+    check(GLFW_KEY_RIGHT,       cameraRotation.x += 75 * deltaT;printf("cameraRotation x=%.2f y=%.2f\n", cameraRotation.x, cameraRotation.y));
+	*/
+	
+	check(GLFW_KEY_UP,          cameraRotation.y -= 45;printf("cameraRotation x=%.2f y=%.2f\n", cameraRotation.x, cameraRotation.y));
+    check(GLFW_KEY_DOWN,        cameraRotation.y += 45;printf("cameraRotation x=%.2f y=%.2f\n", cameraRotation.x, cameraRotation.y));
+    check(GLFW_KEY_LEFT,        cameraRotation.x -= 45;printf("cameraRotation x=%.2f y=%.2f\n", cameraRotation.x, cameraRotation.y));
+    check(GLFW_KEY_RIGHT,       cameraRotation.x += 45;printf("cameraRotation x=%.2f y=%.2f\n", cameraRotation.x, cameraRotation.y));
+	
     check(GLFW_KEY_PERIOD,      cam.fov = cl_float(std::min(cam.fov + 70 * deltaT, 175.0f)));
     check(GLFW_KEY_COMMA,       cam.fov = cl_float(std::max(cam.fov - 70 * deltaT, 5.0f)));
     check(GLFW_KEY_8,           params.areaLight.size /= cl_float(1 + 5 * deltaT));
@@ -1427,6 +1447,7 @@ void Tracer::handleCursorPos(double x, double y)
         // std::cout << "Mouse delta: " << delta.x <<  ", " << delta.y << std::endl;
 
         cameraRotation += delta;
+		printf("cameraRotation x=%.2f y=%.2f\n", cameraRotation.x, cameraRotation.y);
         lastCursorPos = newPos;
 
         updateCamera();

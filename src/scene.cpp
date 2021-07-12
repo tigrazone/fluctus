@@ -28,6 +28,7 @@ Scene::Scene()
     def.type = BXDF_DIFFUSE;
     materials.push_back(def);
     materialTypes |= def.type;
+	updateCamera = false;
 }
 
 Scene::~Scene()
@@ -118,8 +119,9 @@ void Scene::loadModel(const std::string filename, ProgressView *progress, ModelT
     }
 }
 
-cl_int Scene::parseShaderType(std::string type)
+cl_int Scene::parseShaderType(std::string type, bool *shader_set_ok)
 {
+    *shader_set_ok = true;
     if (type == "diffuse")
         return BXDF_DIFFUSE;
     if (type == "glossy")
@@ -135,6 +137,7 @@ cl_int Scene::parseShaderType(std::string type)
     if (type == "emissive")
         return BXDF_EMISSIVE;
     
+    *shader_set_ok = false;
     return BXDF_DIFFUSE;
 }
 
@@ -262,7 +265,8 @@ void Scene::loadObjWithMaterials(const std::string filePath, ProgressView *progr
         m.map_Kd = tryImportTexture(unixifyPath(folderPath + t_mat.diffuse_texname), unixifyPath(t_mat.diffuse_texname));
         m.map_Ks = tryImportTexture(unixifyPath(folderPath + t_mat.specular_texname), unixifyPath(t_mat.specular_texname));
         m.map_N = tryImportTexture(unixifyPath(folderPath + t_mat.bump_texname), unixifyPath(t_mat.bump_texname)); // map_bump in mtl treated as normal map
-        m.type = parseShaderType(t_mat.unknown_parameter["shader"]);
+        bool shader_set_ok;
+        m.type = parseShaderType(t_mat.unknown_parameter["shader"], &shader_set_ok);
 		
 		float sum_kd = m.Kd[0] + m.Kd[1] + m.Kd[2];
 		float sum_ks = m.Ks[0] + m.Ks[1] + m.Ks[2];
@@ -272,47 +276,50 @@ void Scene::loadObjWithMaterials(const std::string filePath, ProgressView *progr
 		components += (sum_kd > 0.0f);
 		components += (sum_ks > 0.0f);
 		components += (sum_kt > 0.0f);
-		
-		if(m.type == BXDF_DIFFUSE && sum_kt>0.0f && sum_kd<0.00000001f && (sum_ks<0.00000001f || 
-            (
-                fabs(sum_ks - sum_kt) < 0.01f &&
-                fabs(t_mat.transmittance[0] - m.Ks[0]) < 0.01f &&
-                fabs(t_mat.transmittance[1] - m.Ks[1]) < 0.01f &&
-                fabs(t_mat.transmittance[2] - m.Ks[2]) < 0.01f 
-             )
-                )
-            )
-        {
-			m.type = BXDF_IDEAL_DIELECTRIC;
-			m.Ks = fr::float3(t_mat.transmittance[0], t_mat.transmittance[1], t_mat.transmittance[2]);
-            printf("* %s changed to BXDF_IDEAL_DIELECTRIC\n", t_mat.name.c_str());
-		}
-		
-		if(m.type == BXDF_DIFFUSE && sum_ks>0.0f && sum_kd<0.00000001f && sum_kt<0.00000001f) {
-			m.type = BXDF_GLOSSY;
-            printf("* %s changed to BXDF_GLOSSY\n", t_mat.name.c_str());
-		}
-		
-		if(m.type == BXDF_DIFFUSE && sum_ks>0.0f && sum_kd>0.0f && (m.Ni>1.0f && m.Ns>1.0f)) {
-			m.type = BXDF_GGX_ROUGH_REFLECTION;
-            printf("* %s changed to BXDF_GGX_ROUGH_REFLECTION\n", t_mat.name.c_str());
-            printf("* Ns=%.2f Ni=%.2f\n", m.Ns, m.Ni);
-		}
-		
-		if(m.type == BXDF_DIFFUSE && sum_ks>0.0f && sum_kt>0.0f && (m.Ni > 1.0f && m.Ns > 1.0f)) {
-			m.type = BXDF_GGX_ROUGH_DIELECTRIC;
-            printf("* %s changed to BXDF_GGX_ROUGH_DIELECTRIC\n", t_mat.name.c_str());
-            printf("* Ns=%.2f Ni=%.2f\n", m.Ns, m.Ni);
-		}
-		
-		if(m.Ke[0]>0.0f || m.Ke[1]>0.0f || m.Ke[2]>0.0f) {
-			m.type = BXDF_EMISSIVE;
-            printf("* %s changed to BXDF_EMISSIVE\n", t_mat.name.c_str());
-		}
 
-        if (components > 1 && m.type == BXDF_DIFFUSE) {
-            m.type = BXDF_MIXED;
-            printf("* %s changed to BXDF_MIXED\n", t_mat.name.c_str());
+        if (!shader_set_ok) {
+
+            if (m.type == BXDF_DIFFUSE && sum_kt > 0.0f && sum_kd < 0.00000001f && (sum_ks < 0.00000001f ||
+                (
+                    fabs(sum_ks - sum_kt) < 0.01f &&
+                    fabs(t_mat.transmittance[0] - m.Ks[0]) < 0.01f &&
+                    fabs(t_mat.transmittance[1] - m.Ks[1]) < 0.01f &&
+                    fabs(t_mat.transmittance[2] - m.Ks[2]) < 0.01f
+                    )
+                )
+                )
+            {
+                m.type = BXDF_IDEAL_DIELECTRIC;
+                m.Ks = fr::float3(t_mat.transmittance[0], t_mat.transmittance[1], t_mat.transmittance[2]);
+                printf("* %s changed to BXDF_IDEAL_DIELECTRIC\n", t_mat.name.c_str());
+            }
+
+            if (m.type == BXDF_DIFFUSE && sum_ks > 0.0f && sum_kd < 0.00000001f && sum_kt < 0.00000001f) {
+                m.type = BXDF_GLOSSY;
+                printf("* %s changed to BXDF_GLOSSY\n", t_mat.name.c_str());
+            }
+
+            if (m.type == BXDF_DIFFUSE && sum_ks > 0.0f && sum_kd > 0.0f && (m.Ni > 1.0f && m.Ns > 1.0f) && sum_kt < 0.00000001f) {
+                m.type = BXDF_GGX_ROUGH_REFLECTION;
+                printf("* %s changed to BXDF_GGX_ROUGH_REFLECTION\n", t_mat.name.c_str());
+                printf("* Ns=%.2f Ni=%.2f\n", m.Ns, m.Ni);
+            }
+
+            if (m.type == BXDF_DIFFUSE && sum_ks > 0.0f && sum_kt > 0.0f && (m.Ni > 1.0f && m.Ns > 1.0f) && sum_kd < 0.00000001f) {
+                m.type = BXDF_GGX_ROUGH_DIELECTRIC;
+                printf("* %s changed to BXDF_GGX_ROUGH_DIELECTRIC\n", t_mat.name.c_str());
+                printf("* Ns=%.2f Ni=%.2f\n", m.Ns, m.Ni);
+            }
+
+            if (m.Ke[0] > 0.0f || m.Ke[1] > 0.0f || m.Ke[2] > 0.0f) {
+                m.type = BXDF_EMISSIVE;
+                printf("* %s changed to BXDF_EMISSIVE\n", t_mat.name.c_str());
+            }
+
+            if (components > 1 && m.type == BXDF_DIFFUSE) {
+                m.type = BXDF_MIXED;
+                printf("* %s changed to BXDF_MIXED\n", t_mat.name.c_str());
+            }
         }
 		
 		m.Ns = toRoughness(m.Ns);
@@ -633,44 +640,16 @@ void Scene::loadPBFModel(const std::string filename, ModelTransform* transform)
       printf("%d %s\n", camN, (cam0->toString()).c_str());
 	  camN++;
 	}
-
-	/*
-    Camera::SP ours = std::make_shared<Camera>();
-    if (camera->hasParam1f("fov"))
-      ours->fov = camera->getParam1f("fov");
-    if (camera->hasParam1f("lensradius"))
-      ours->lensRadius = camera->getParam1f("lensradius");
-    if (camera->hasParam1f("focaldistance"))
-      ours->focalDistance = camera->getParam1f("focaldistance");
-
-    ours->frame = inverse(camera->transform.atStart);
-      
-    ours->simplified.lens_center
-      = ours->frame.p;
-    ours->simplified.lens_du
-      = ours->lensRadius * ours->frame.l.vx;
-    ours->simplified.lens_dv
-      = ours->lensRadius * ours->frame.l.vy;
-      
-    const float fovDistanceToUnitPlane = 0.5f / tanf(ours->fov/2 * (float)M_PI/180.f);
-    ours->simplified.screen_center
-      = ours->frame.p + ours->focalDistance * ours->frame.l.vz;
-    ours->simplified.screen_du
-      = - ours->focalDistance/fovDistanceToUnitPlane * ours->frame.l.vx;
-    ours->simplified.screen_dv
-      = ours->focalDistance/fovDistanceToUnitPlane * ours->frame.l.vy;
-	  */
-	  
+	
+	
 	/*
     const auto right = scene->getWorldRight();
     const auto up = scene->getWorldUp();
-
     const fr::matrix rot = 
 		rotation(right, 
 			toRad(cameraRotation.y)) * 
 		rotation(up, 
 			toRad(cameraRotation.x));
-
     params.camera.right = fr::float3(rot.m00, rot.m01, rot.m02);
     params.camera.up =    fr::float3(rot.m10, rot.m11, rot.m12);
     params.camera.dir =  -fr::float3(rot.m20, rot.m21, rot.m22);	
@@ -690,9 +669,40 @@ void Scene::loadPBFModel(const std::string filename, ModelTransform* transform)
 	*/
 
     // Read xform active when camera was created
-    pbrt::Camera::SP cam = scene->cameras[0];
-    fr::float3 v = toFloat3(cam->frame.l.vy);
+    pbrt::Camera::SP PBRTcam = scene->cameras[0];
+	
+	/*
+    this->worldUp = toFloat3(PBRTcam->frame.l.vy);
+    this->worldRight = toFloat3(PBRTcam->frame.l.vx);
+	*/
+	
+	printf("vy x=%.4f y=%.4f z=%.4f\n", PBRTcam->frame.l.vy.x, PBRTcam->frame.l.vy.y, PBRTcam->frame.l.vy.z);
+	printf("vx x=%.4f y=%.4f z=%.4f\n", PBRTcam->frame.l.vx.x, PBRTcam->frame.l.vx.y, PBRTcam->frame.l.vx.z);
+	
+	/*
+    fr::float3 v = toFloat3(PBRTcam->frame.l.vy);
     this->worldUp = (fabs(v.y) > fabs(v.z)) ? fr::float3(0.0f, 1.0f, 0.0f) : fr::float3(0.0f, 0.0f, 1.0f);
+	
+    fr::float3 u = toFloat3(PBRTcam->frame.l.vx);
+    this->worldRight = (fabs(v.x) > fabs(v.y)) ? fr::float3(0.1f, 0.0f, 0.0f) : fr::float3(0.0f, 1.0f, 0.0f);
+	*/
+	
+	cam.pos = toFloat3(PBRTcam->frame.p);
+	
+	cam.dir = toFloat3(PBRTcam->frame.l.vz);
+	cam.up = toFloat3(PBRTcam->frame.l.vy);
+	cam.right = toFloat3(PBRTcam->frame.l.vx);
+	
+    printf("vz x=%.4f y=%.4f z=%.4f\n", PBRTcam->frame.l.vz.x, PBRTcam->frame.l.vz.y, PBRTcam->frame.l.vz.z);
+    printf("pos x=%.4f y=%.4f z=%.4f\n", cam.pos.x, cam.pos.y, cam.pos.z);
+
+    cam.fov = PBRTcam->fov;
+    cam.apertureSize = PBRTcam->lensRadius*0;
+    cam.focalDist = PBRTcam->focalDistance;
+
+    cam.fovSCALE = tan(toRad(0.5f * cam.fov));
+	
+	updateCamera = true;
 
     auto loadTex = [&](pbrt::Texture::SP tmap)
     {

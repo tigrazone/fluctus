@@ -194,8 +194,8 @@ inline float3 tangentSpaceNormal(Hit hit, global Triangle *tris, const Material 
 
     // Compute T, B using inverse of [t1.x t1.y; t2.x t2.y]
     float invDet = native_recip(det);
-    float3 T = (invDet * (e1 * t2.y - e2 * t1.y));
-    float3 B = (invDet * (e2 * t1.x - e1 * t2.x));
+    float3 T = normalize(invDet * (e1 * t2.y - e2 * t1.y));
+    float3 B = normalize(invDet * (e2 * t1.x - e1 * t2.x));
 
     // Expanded matrix multiply M * hit.N
     float3 N;
@@ -203,7 +203,7 @@ inline float3 tangentSpaceNormal(Hit hit, global Triangle *tris, const Material 
     N.y = T.y*texNormal.x + B.y*texNormal.y + hit.N.y*texNormal.z;
     N.z = T.z*texNormal.x + B.z*texNormal.y + hit.N.z*texNormal.z;
 
-    return (N);
+    return normalize(N);
 }
 
 // Read all material parameters at once

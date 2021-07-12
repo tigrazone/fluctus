@@ -50,6 +50,9 @@ public:
 
     fr::float3 getWorldRight() { return worldRight; }
     fr::float3 getWorldUp() { return worldUp; }
+	
+	Camera cam;
+	bool updateCamera;
 
 private:
     void loadPlyModel(const std::string filename, ModelTransform* transform);
@@ -62,7 +65,7 @@ private:
     // With tiny_obj_loader
     void loadObjWithMaterials(const std::string filename, ProgressView *progress, ModelTransform* transform);
     cl_int tryImportTexture(const std::string path, const std::string name);
-    cl_int parseShaderType(std::string type);
+    cl_int parseShaderType(std::string type, bool* shader_set_ok);
 
     void unpackIndexedData(const std::vector<fr::float3> &positions,
                            const std::vector<fr::float3>& normals,
